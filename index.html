@@ -645,6 +645,84 @@
   </div>
 
 <script>
+/* ============================================================================
+ * POLYFILL: google.script.run สำหรับกรณีเปิดหน้านี้จากที่อื่นนอก Apps Script
+ * (เช่น GitHub Pages, หรือ static host อื่นๆ)
+ *
+ * ถ้าเปิดจากลิงก์ script.google.com/macros/.../exec โดยตรง เบราว์เซอร์จะมี
+ * google.script.run ของจริงให้ใช้อยู่แล้ว (Apps Script HtmlService ฉีดให้อัตโนมัติ)
+ * โค้ดข้างล่างนี้จะ "ไม่ทำอะไรเลย" ในกรณีนั้น (เช็คแล้วว่ามีของจริงอยู่)
+ *
+ * แต่ถ้าเปิดจาก static host (ไม่มี google.script.run มาให้) โค้ดนี้จะสร้าง
+ * google.script.run เทียมขึ้นมาแทน โดยแปลทุกการเรียกเป็น fetch() ไปยัง
+ * Apps Script Web App (ฟังก์ชัน doPost ใน Code.gs) แทน — ไม่ต้องแก้โค้ดส่วนอื่น
+ * ของไฟล์นี้ที่เรียก google.script.run.withSuccessHandler(...).ฟังก์ชัน(...) เลย
+ *
+ * *** ตั้งค่า APPS_SCRIPT_EXEC_URL ให้ตรงกับลิงก์ Web App ที่ deploy ไว้ ***
+ * (Deploy > Manage deployments > คัดลอกลิงก์ที่ลงท้ายด้วย /exec)
+ * ============================================================================ */
+(function () {
+  if (window.google && window.google.script && window.google.script.run) {
+    return; // กำลังรันอยู่ใน Apps Script จริง ๆ มี google.script.run ของแท้ให้ใช้แล้ว ไม่ต้องทำอะไร
+  }
+
+  var APPS_SCRIPT_EXEC_URL = 'https://script.google.com/macros/s/AKfycbzWFzj_Qwy743_V7jeMlqufsK1n8xQYfCcSCqLIIK2WEeI01C76WealY4zEk87HW6-U4w/exec';
+
+  function createRunner() {
+    var successHandler = null;
+    var failureHandler = null;
+
+    var handler = {
+      get: function (target, prop) {
+        if (prop === 'withSuccessHandler') {
+          return function (fn) { successHandler = fn; return proxy; };
+        }
+        if (prop === 'withFailureHandler') {
+          return function (fn) { failureHandler = fn; return proxy; };
+        }
+        if (prop === 'withUserObject') {
+          return function () { return proxy; }; // ไม่รองรับ ignore เฉย ๆ
+        }
+        // prop อื่น ๆ ทั้งหมด = ชื่อฟังก์ชันฝั่ง Apps Script ที่ต้องการเรียก
+        return function () {
+          var args = Array.prototype.slice.call(arguments);
+          fetch(APPS_SCRIPT_EXEC_URL, {
+            method: 'POST',
+            // ใช้ text/plain เพื่อเลี่ยง CORS preflight (OPTIONS) ซึ่ง Apps Script Web App ไม่รองรับ
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ fn: prop, args: args })
+          })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+              if (data && data.success) {
+                if (successHandler) successHandler(data.result);
+              } else {
+                var errMsg = (data && data.error) ? data.error : 'เรียก API ไม่สำเร็จ';
+                if (failureHandler) failureHandler(new Error(errMsg));
+                else console.error('google.script.run error:', errMsg);
+              }
+            })
+            .catch(function (err) {
+              if (failureHandler) failureHandler(err);
+              else console.error('google.script.run fetch error:', err);
+            });
+        };
+      }
+    };
+    var proxy = new Proxy({}, handler);
+    return proxy;
+  }
+
+  window.google = window.google || {};
+  window.google.script = window.google.script || {};
+  Object.defineProperty(window.google.script, 'run', {
+    configurable: true,
+    get: function () { return createRunner(); }
+  });
+})();
+</script>
+
+<script>
 const CATEGORIES = [
   { id: 'shirt', name: 'เสื้อ', icon: '' },
   { id: 'pants', name: 'กางเกง', icon: '' },
@@ -893,13 +971,13 @@ function buildUniformPassVoucherHtml(pass, size) {
   const usedRows = pass.items.length;
   const totalRows = Math.max(isFull ? 10 : 5, usedRows + 3);
   // แทรกแถว "บรรจุ [วันที่]" ไว้ราวๆ กลางตาราง (ให้ใกล้เคียงฟอร์มตัวอย่าง) และเว้นแถวสุดท้ายไว้ให้หมายเหตุเสมอ
-  const confirmRowindex = Math.min(totalRows - 2, Math.max(usedRows + 1, Math.floor(totalRows * 0.6)));
+  const confirmRowIndex = Math.min(totalRows - 2, Math.max(usedRows + 1, Math.floor(totalRows * 0.6)));
 
   let bodyRows = itemRowsHtml;
   for (let rowIdx = usedRows; rowIdx < totalRows; rowIdx++) {
     if (rowIdx === totalRows - 1) {
       bodyRows += `<tr><td colspan="2" class="pv-noterow">หมายเหตุ : รับเปลี่ยนสินค้าได้ภายใน 5 วัน</td></tr>`;
-    } else if (rowIdx === confirmRowindex && pass.confirmDate) {
+    } else if (rowIdx === confirmRowIndex && pass.confirmDate) {
       bodyRows += `<tr><td colspan="2" class="pv-confirmrow">บรรจุ ${pass.confirmDate}</td></tr>`;
     } else {
       bodyRows += `<tr><td class="pv-td">&nbsp;</td><td class="pv-td">&nbsp;</td></tr>`;
@@ -1972,7 +2050,7 @@ function renderStockList() {
         <td class="px-4 py-3">${p.size || '-'}</td>
         <td class="px-4 py-3 text-right">${Number(p.price).toFixed(2)}</td>
         <td class="px-4 py-3 text-center">
-          <button data-row="${p.rowindex}" data-instock="${inStock ? '1' : '0'}" class="stock-toggle-btn px-3 py-1.5 rounded-full text-xs font-medium border transition ${inStock ? 'bg-green-500/10 text-green-600 border-green-500/30 hover:bg-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20'}">
+          <button data-row="${p.rowIndex}" data-instock="${inStock ? '1' : '0'}" class="stock-toggle-btn px-3 py-1.5 rounded-full text-xs font-medium border transition ${inStock ? 'bg-green-500/10 text-green-600 border-green-500/30 hover:bg-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20'}">
             ${inStock ? 'มีสินค้า' : 'สินค้าหมด'}
           </button>
         </td>
@@ -1981,20 +2059,20 @@ function renderStockList() {
 
   body.querySelectorAll('.stock-toggle-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      const rowindex = btn.dataset.row;
+      const rowIndex = btn.dataset.row;
       const newInStock = btn.dataset.instock !== '1';
       const oldText = btn.textContent;
       btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
       google.script.run.withSuccessHandler(function (res) {
         btn.disabled = false;
         if (!res.success) { Swal.fire({ icon: 'error', title: 'อัปเดตไม่สำเร็จ', text: res.message, background: '#1e1a18', color: '#fff' }); btn.textContent = oldText; return; }
-        const item = stockData.find(function (p) { return String(p.rowindex) === String(rowindex); });
+        const item = stockData.find(function (p) { return String(p.rowIndex) === String(rowIndex); });
         if (item) item.isOutOfStock = !newInStock;
         renderStockList();
       }).withFailureHandler(function (err) {
         btn.disabled = false; btn.textContent = oldText;
         Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, background: '#1e1a18', color: '#fff' });
-      }).updateStockStatus(dashboardPassword, rowindex, newInStock);
+      }).updateStockStatus(dashboardPassword, rowIndex, newInStock);
     });
   });
 }
