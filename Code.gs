@@ -187,6 +187,73 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
+/* ============================================================================
+ * JSON API (สำหรับให้ index.html ที่ hosted อยู่นอก Apps Script เช่น GitHub Pages
+ * เรียกผ่าน fetch() แทน google.script.run ซึ่งใช้ได้เฉพาะตอนเปิดจากลิงก์
+ * script.google.com/macros/.../exec โดยตรงเท่านั้น)
+ *
+ * รูปแบบ request:  POST body เป็น JSON  { "fn": "ชื่อฟังก์ชัน", "args": [ ... ] }
+ * รูปแบบ response:  { "success": true,  "result": <ผลลัพธ์ของฟังก์ชัน> }
+ *                    { "success": false, "error": "ข้อความ error" }
+ *
+ * *** สำคัญ: อนุญาตให้เรียกได้เฉพาะฟังก์ชันใน API_FUNCTIONS ด้านล่างเท่านั้น ***
+ * (whitelist กันไม่ให้เรียกฟังก์ชันอื่นในไฟล์นี้โดยพลการผ่าน request ที่แต่งขึ้นเอง)
+ * ============================================================================ */
+const API_FUNCTIONS = {
+  checkDashboardAuth: checkDashboardAuth,
+  getDashboardData: getDashboardData,
+  getEmployeeByCode: getEmployeeByCode,
+  getEmployeePassData: getEmployeePassData,
+  getEmployeeSpecialHistory: getEmployeeSpecialHistory,
+  getEmployeeUniformHistory: getEmployeeUniformHistory,
+  getEmployeeUniformPassData: getEmployeeUniformPassData,
+  getItemSummary: getItemSummary,
+  getOrderStatusByCode: getOrderStatusByCode,
+  getPassData: getPassData,
+  getPickupLocations: getPickupLocations,
+  getProductPrices: getProductPrices,
+  getSpecialProductCatalogData: getSpecialProductCatalogData,
+  getSpecialStatusByCode: getSpecialStatusByCode,
+  getStockList: getStockList,
+  getTodaySpecialClaims: getTodaySpecialClaims,
+  getTodayUniformClaims: getTodayUniformClaims,
+  getUniformCatalogData: getUniformCatalogData,
+  getUniformPassData: getUniformPassData,
+  getUniformStatusByCode: getUniformStatusByCode,
+  searchOrders: searchOrders,
+  searchSpecialClaims: searchSpecialClaims,
+  searchUniformClaims: searchUniformClaims,
+  submitOrder: submitOrder,
+  submitSpecialClaim: submitSpecialClaim,
+  submitUniformClaim: submitUniformClaim,
+  updateOrderData: updateOrderData,
+  updateSpecialClaimStatus: updateSpecialClaimStatus,
+  updateStockStatus: updateStockStatus,
+  updateUniformClaimStatus: updateUniformClaimStatus
+};
+
+function doPost(e) {
+  var out;
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      throw new Error('ไม่มีข้อมูล request ส่งมา');
+    }
+    var body = JSON.parse(e.postData.contents);
+    var fnName = body.fn;
+    var args = body.args || [];
+    var handler = API_FUNCTIONS[fnName];
+    if (typeof handler !== 'function') {
+      throw new Error('ไม่อนุญาตให้เรียกฟังก์ชันนี้: ' + fnName);
+    }
+    var result = handler.apply(null, args);
+    out = { success: true, result: result };
+  } catch (err) {
+    out = { success: false, error: (err && err.message) ? err.message : String(err) };
+  }
+  return ContentService.createTextOutput(JSON.stringify(out))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 function getPickupLocations() {
   return PICKUP_LOCATIONS;
 }
