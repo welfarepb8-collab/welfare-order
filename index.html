@@ -971,13 +971,13 @@ function buildUniformPassVoucherHtml(pass, size) {
   const usedRows = pass.items.length;
   const totalRows = Math.max(isFull ? 10 : 5, usedRows + 3);
   // แทรกแถว "บรรจุ [วันที่]" ไว้ราวๆ กลางตาราง (ให้ใกล้เคียงฟอร์มตัวอย่าง) และเว้นแถวสุดท้ายไว้ให้หมายเหตุเสมอ
-  const confirmRowIndex = Math.min(totalRows - 2, Math.max(usedRows + 1, Math.floor(totalRows * 0.6)));
+  const confirmRowindex = Math.min(totalRows - 2, Math.max(usedRows + 1, Math.floor(totalRows * 0.6)));
 
   let bodyRows = itemRowsHtml;
   for (let rowIdx = usedRows; rowIdx < totalRows; rowIdx++) {
     if (rowIdx === totalRows - 1) {
       bodyRows += `<tr><td colspan="2" class="pv-noterow">หมายเหตุ : รับเปลี่ยนสินค้าได้ภายใน 5 วัน</td></tr>`;
-    } else if (rowIdx === confirmRowIndex && pass.confirmDate) {
+    } else if (rowIdx === confirmRowindex && pass.confirmDate) {
       bodyRows += `<tr><td colspan="2" class="pv-confirmrow">บรรจุ ${pass.confirmDate}</td></tr>`;
     } else {
       bodyRows += `<tr><td class="pv-td">&nbsp;</td><td class="pv-td">&nbsp;</td></tr>`;
@@ -2050,7 +2050,7 @@ function renderStockList() {
         <td class="px-4 py-3">${p.size || '-'}</td>
         <td class="px-4 py-3 text-right">${Number(p.price).toFixed(2)}</td>
         <td class="px-4 py-3 text-center">
-          <button data-row="${p.rowIndex}" data-instock="${inStock ? '1' : '0'}" class="stock-toggle-btn px-3 py-1.5 rounded-full text-xs font-medium border transition ${inStock ? 'bg-green-500/10 text-green-600 border-green-500/30 hover:bg-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20'}">
+          <button data-row="${p.rowindex}" data-instock="${inStock ? '1' : '0'}" class="stock-toggle-btn px-3 py-1.5 rounded-full text-xs font-medium border transition ${inStock ? 'bg-green-500/10 text-green-600 border-green-500/30 hover:bg-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20'}">
             ${inStock ? 'มีสินค้า' : 'สินค้าหมด'}
           </button>
         </td>
@@ -2059,20 +2059,20 @@ function renderStockList() {
 
   body.querySelectorAll('.stock-toggle-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      const rowIndex = btn.dataset.row;
+      const rowindex = btn.dataset.row;
       const newInStock = btn.dataset.instock !== '1';
       const oldText = btn.textContent;
       btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
       google.script.run.withSuccessHandler(function (res) {
         btn.disabled = false;
         if (!res.success) { Swal.fire({ icon: 'error', title: 'อัปเดตไม่สำเร็จ', text: res.message, background: '#1e1a18', color: '#fff' }); btn.textContent = oldText; return; }
-        const item = stockData.find(function (p) { return String(p.rowIndex) === String(rowIndex); });
+        const item = stockData.find(function (p) { return String(p.rowindex) === String(rowindex); });
         if (item) item.isOutOfStock = !newInStock;
         renderStockList();
       }).withFailureHandler(function (err) {
         btn.disabled = false; btn.textContent = oldText;
         Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, background: '#1e1a18', color: '#fff' });
-      }).updateStockStatus(dashboardPassword, rowIndex, newInStock);
+      }).updateStockStatus(dashboardPassword, rowindex, newInStock);
     });
   });
 }
