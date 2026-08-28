@@ -1076,6 +1076,59 @@ function getEmployeeSpecialHistory(password, empCode) {
 }
 
 /**
+ * ฝั่งพนักงาน: เช็คสถานะการเบิกพิเศษด้วยรหัสพนักงาน (ไม่ต้องใช้รหัสผ่าน/ใบผ่าน)
+ * ใช้ในหน้า "เช็คสถานะสินค้า" คู่กับสถานะคำสั่งซื้อปกติและสถานะเบิกชุดบรรจุ (เหมือน getUniformStatusByCode ทุกประการ)
+ * รวมแถวที่บันทึกพร้อมกัน (เลขที่คำสั่งเบิกเดียวกัน) กลับเป็น 1 รายการเบิกต่อครั้ง พร้อมสถานะจากคอลัมน์ I ของชีท "เบิกพิเศษ"
+ */
+function getSpecialStatusByCode(code) {
+  code = _norm(code);
+  if (!code) return { success: false, message: 'กรุณากรอกรหัสพนักงาน' };
+
+  const emp = getEmployeeByCode(code);
+  if (!emp.found) return { success: false, message: 'ไม่พบรหัสพนักงานนี้ในระบบ กรุณาตรวจสอบอีกครั้ง' };
+
+  const sh = _specialClaimSheet();
+  const lastRow = sh.getLastRow();
+  if (lastRow <= 1) {
+    return { success: true, empName: emp.name, statuses: SPECIAL_CLAIM_STATUSES, cancelledStatus: SPECIAL_CLAIM_CANCELLED_STATUS, claims: [] };
+  }
+
+  const data = sh.getRange(2, 1, lastRow - 1, SPECIAL_CLAIM_HEADERS.length).getValues();
+
+  const grouped = {};
+  const order = [];
+  data.forEach(function (row) {
+    const rowCode = _norm(row[SPECIAL_CLAIM_COL.CODE - 1]);
+    if (rowCode.toLowerCase() !== code.toLowerCase()) return;
+
+    const claimId = _norm(row[SPECIAL_CLAIM_COL.CLAIM_ID - 1]);
+    const updatedAt = _normUniformUpdatedAt(row[SPECIAL_CLAIM_COL.UPDATED_AT - 1]);
+    const item = _norm(row[SPECIAL_CLAIM_COL.ITEM - 1]);
+    const size = _norm(row[SPECIAL_CLAIM_COL.SIZE - 1]);
+    const qty = Number(row[SPECIAL_CLAIM_COL.QTY - 1]) || 0;
+    const status = _norm(row[SPECIAL_CLAIM_COL.STATUS - 1]);
+
+    const key = claimId || (rowCode + '|' + updatedAt);
+    if (!grouped[key]) { grouped[key] = { claimId: claimId, updatedAt: updatedAt, items: [], status: status }; order.push(key); }
+    if (status && !grouped[key].status) grouped[key].status = status;
+    const itemLabel = size ? (item + ' (' + size + ')') : item;
+    grouped[key].items.push(itemLabel + (qty ? (' x' + qty) : ''));
+  });
+
+  const claims = order.map(function (key) {
+    const g = grouped[key];
+    return {
+      claimId: g.claimId,
+      updatedAt: g.updatedAt,
+      itemsLabel: g.items.join(', '),
+      status: g.status || ''
+    };
+  }).reverse();
+
+  return { success: true, empName: emp.name, statuses: SPECIAL_CLAIM_STATUSES, cancelledStatus: SPECIAL_CLAIM_CANCELLED_STATUS, claims: claims };
+}
+
+/**
  * ฝั่งแอดมิน: บันทึกการเบิกพิเศษของพนักงาน 1 คน (เลือกสินค้าจากชีท "รายการสินค้าเบิก" ได้หลายรายการ พร้อมระบุจำนวนเอง)
  * itemsJson = ข้อความ JSON ของ array [{ item, size, qty }, ...] อย่างน้อย 1 รายการ (ส่งมาจาก Client เป็น JSON string
  * เพื่อรองรับจำนวนรายการที่ไม่แน่นอน ต่างจาก submitUniformClaim ที่มีแค่ 3 ช่องคงที่)
