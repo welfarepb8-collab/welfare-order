@@ -263,16 +263,16 @@
           </button>
           <button id="navDashUniformToday" class="dash-nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition text-left">
             <span class="w-1.5 h-1.5 rounded-full bg-current opacity-50 shrink-0"></span>
-            <span>รายการเบิกชุดบรรจุ</span>
+            <span>รายงานเบิกชุดบรรจุ</span>
           </button>
           <button id="navDashSpecialToday" class="dash-nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition text-left">
             <span class="w-1.5 h-1.5 rounded-full bg-current opacity-50 shrink-0"></span>
-            <span>รายการเบิกพิเศษ</span>
+            <span>รายงานเบิกพิเศษ</span>
           </button>
         </div>
         <button id="navUniform" class="dash-nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 2l3 3h6l3-3M6 2L3 6l3 3 2-2v13h8V7l2 2 3-3-3-4M11 5v3M13 5v3"/></svg>
-          <span>บันทึกเบิกชุดบรรจุ</span>
+          <span>บันทึกเบิกชุดบรรจุ/เปลี่ยน Size</span>
         </button>
         <button id="navSpecial" class="dash-nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7h-9m9 0v10a2 2 0 01-2 2H9a2 2 0 01-2-2V7m9 0V5a2 2 0 00-2-2h-3a2 2 0 00-2 2v2M5 7h4"/></svg>
@@ -393,6 +393,10 @@
             </div>
 
             <div id="uniformFormWrap" class="hidden mt-5 fade-in">
+              <button id="btnUniformEditMode" type="button" class="w-full mb-4 bg-[#1a1614] border border-[#f5860f]/40 text-[#f5860f] font-medium py-2.5 rounded-xl hover:bg-[#f5860f]/10 transition text-sm">เปลี่ยนชุดฟอร์ม (แก้ไขรายการล่าสุด)</button>
+              <div id="uniformEditModeBanner" class="hidden mb-4 text-xs bg-[#f5860f]/10 border border-[#f5860f]/30 text-[#f5860f] rounded-xl px-3 py-2">
+                กำลังแก้ไขรายการล่าสุด — กด "บันทึกการแก้ไข" เพื่อสร้างคำสั่งเบิกใหม่แทนรายการเดิม (รายการเดิมจะถูกยกเลิกอัตโนมัติ)
+              </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="text-sm text-white/50 mb-2 block">เสื้อ</label>
@@ -494,12 +498,12 @@
               <div id="specialCartList" class="mt-4 space-y-2"></div>
               <p id="specialCartEmpty" class="text-white/40 text-xs mt-3">ยังไม่ได้เพิ่มรายการ</p>
 
-              <button id="btnSubmitSpecialClaim" class="mt-5 w-full bg-gradient-to-br from-accent to-accent2 text-[#1a1210] font-semibold py-3 rounded-xl hover:brightness-110 transition">บันทึกการเบิกพิเศษ</button>
-
               <div class="mt-5">
-                <p class="text-white/50 text-xs mb-2">ประวัติการเบิกพิเศษของพนักงานคนนี้</p>
-                <div id="specialHistoryList" class="space-y-1.5"></div>
+                <label class="text-sm text-white/50 mb-2 block">ข้อความเพิ่มเติม (ถ้ามี)</label>
+                <textarea id="specialExtraText" rows="2" placeholder="พิมพ์ข้อความเพิ่มเติม..." class="w-full bg-[#1a1614] border border-white/10 rounded-xl px-4 py-2.5 outline-none focus:border-[#f5860f] transition placeholder:text-white/30 resize-none"></textarea>
               </div>
+
+              <button id="btnSubmitSpecialClaim" class="mt-3 w-full bg-gradient-to-br from-accent to-accent2 text-[#1a1210] font-semibold py-3 rounded-xl hover:brightness-110 transition">บันทึกการเบิกพิเศษ</button>
             </div>
           </div>
         </div>
@@ -619,11 +623,11 @@
         </button>
         <button id="landingUniform" class="landing-nav-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition text-left hover:bg-white/10">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 2l3 3h6l3-3M6 2L3 6l3 3 2-2v13h8V7l2 2 3-3-3-4M11 5v3M13 5v3"/></svg>
-          <span>บันทึกเบิกชุดบรรจุ</span>
+          <span>บันทึกเบิกชุดบรรจุ/เปลี่ยน Size</span>
         </button>
         <button id="landingDashSpecialToday" class="landing-nav-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition text-left hover:bg-white/10">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-          <span>รายการเบิกพิเศษ</span>
+          <span>รายงานเบิกพิเศษ</span>
         </button>
         <button id="landingSpecial" class="landing-nav-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition text-left hover:bg-white/10">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7h-9m9 0v10a2 2 0 01-2 2H9a2 2 0 01-2-2V7m9 0V5a2 2 0 00-2-2h-3a2 2 0 00-2 2v2M5 7h4"/></svg>
@@ -971,13 +975,13 @@ function buildUniformPassVoucherHtml(pass, size) {
   const usedRows = pass.items.length;
   const totalRows = Math.max(isFull ? 10 : 5, usedRows + 3);
   // แทรกแถว "บรรจุ [วันที่]" ไว้ราวๆ กลางตาราง (ให้ใกล้เคียงฟอร์มตัวอย่าง) และเว้นแถวสุดท้ายไว้ให้หมายเหตุเสมอ
-  const confirmRowindex = Math.min(totalRows - 2, Math.max(usedRows + 1, Math.floor(totalRows * 0.6)));
+  const confirmRowIndex = Math.min(totalRows - 2, Math.max(usedRows + 1, Math.floor(totalRows * 0.6)));
 
   let bodyRows = itemRowsHtml;
   for (let rowIdx = usedRows; rowIdx < totalRows; rowIdx++) {
     if (rowIdx === totalRows - 1) {
       bodyRows += `<tr><td colspan="2" class="pv-noterow">หมายเหตุ : รับเปลี่ยนสินค้าได้ภายใน 5 วัน</td></tr>`;
-    } else if (rowIdx === confirmRowindex && pass.confirmDate) {
+    } else if (rowIdx === confirmRowIndex && pass.confirmDate) {
       bodyRows += `<tr><td colspan="2" class="pv-confirmrow">บรรจุ ${pass.confirmDate}</td></tr>`;
     } else {
       bodyRows += `<tr><td class="pv-td">&nbsp;</td><td class="pv-td">&nbsp;</td></tr>`;
@@ -1814,21 +1818,21 @@ function switchDashTab(tab) {
     toggleDashboardSubmenu(true);
     uniformTodayEl.classList.remove('hidden');
     statsGrid.classList.add('hidden');
-    pageTitle.textContent = 'รายการเบิกชุดบรรจุ (เลือกช่วงวันที่ หรือ ค้นหารหัสพนักงาน)';
+    pageTitle.textContent = 'รายงานเบิกชุดบรรจุ (เลือกช่วงวันที่ หรือ ค้นหารหัสพนักงาน)';
     const uq = document.getElementById('uniformTodaySearch').value.trim();
     if (uq) { searchUniformTodayByCode(uq); } else { loadUniformToday(); }
   } else if (tab === 'uniform') {
     navUniform.classList.add('active');
     uniformEl.classList.remove('hidden');
     dateRangeWrap.classList.add('hidden'); statsGrid.classList.add('hidden');
-    pageTitle.textContent = 'บันทึกเบิกชุดบรรจุ';
+    pageTitle.textContent = 'บันทึกเบิกชุดบรรจุ/เปลี่ยน Size';
     loadUniformCatalogIfNeeded();
   } else if (tab === 'specialToday') {
     navDash.classList.add('active'); navDashSpecialToday.classList.add('active');
     toggleDashboardSubmenu(true);
     specialTodayEl.classList.remove('hidden');
     statsGrid.classList.add('hidden');
-    pageTitle.textContent = 'รายการเบิกพิเศษ (เลือกช่วงวันที่ หรือ ค้นหารหัสพนักงาน)';
+    pageTitle.textContent = 'รายงานเบิกพิเศษ (เลือกช่วงวันที่ หรือ ค้นหารหัสพนักงาน)';
     const sq = document.getElementById('specialTodaySearch').value.trim();
     if (sq) { searchSpecialTodayByCode(sq); } else { loadSpecialToday(); }
   } else if (tab === 'special') {
@@ -2050,7 +2054,7 @@ function renderStockList() {
         <td class="px-4 py-3">${p.size || '-'}</td>
         <td class="px-4 py-3 text-right">${Number(p.price).toFixed(2)}</td>
         <td class="px-4 py-3 text-center">
-          <button data-row="${p.rowindex}" data-instock="${inStock ? '1' : '0'}" class="stock-toggle-btn px-3 py-1.5 rounded-full text-xs font-medium border transition ${inStock ? 'bg-green-500/10 text-green-600 border-green-500/30 hover:bg-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20'}">
+          <button data-row="${p.rowIndex}" data-instock="${inStock ? '1' : '0'}" class="stock-toggle-btn px-3 py-1.5 rounded-full text-xs font-medium border transition ${inStock ? 'bg-green-500/10 text-green-600 border-green-500/30 hover:bg-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20'}">
             ${inStock ? 'มีสินค้า' : 'สินค้าหมด'}
           </button>
         </td>
@@ -2059,20 +2063,20 @@ function renderStockList() {
 
   body.querySelectorAll('.stock-toggle-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      const rowindex = btn.dataset.row;
+      const rowIndex = btn.dataset.row;
       const newInStock = btn.dataset.instock !== '1';
       const oldText = btn.textContent;
       btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
       google.script.run.withSuccessHandler(function (res) {
         btn.disabled = false;
         if (!res.success) { Swal.fire({ icon: 'error', title: 'อัปเดตไม่สำเร็จ', text: res.message, background: '#1e1a18', color: '#fff' }); btn.textContent = oldText; return; }
-        const item = stockData.find(function (p) { return String(p.rowindex) === String(rowindex); });
+        const item = stockData.find(function (p) { return String(p.rowIndex) === String(rowIndex); });
         if (item) item.isOutOfStock = !newInStock;
         renderStockList();
       }).withFailureHandler(function (err) {
         btn.disabled = false; btn.textContent = oldText;
         Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, background: '#1e1a18', color: '#fff' });
-      }).updateStockStatus(dashboardPassword, rowindex, newInStock);
+      }).updateStockStatus(dashboardPassword, rowIndex, newInStock);
     });
   });
 }
@@ -2082,6 +2086,7 @@ document.getElementById('stockSearch').addEventListener('input', function () { r
 /* ============ เบิกชุดบรรจุ (ค้นหารหัสพนักงาน -> เลือกเสื้อ/กางเกง -> บันทึก) ============ */
 let uniformCatalog = [];
 let uniformCurrentEmp = null;
+let uniformEditMode = false; // true = กำลังแก้ไข "รายการล่าสุด" ของพนักงานคนนี้ (กดปุ่ม "เปลี่ยนชุดฟอร์ม")
 
 function loadUniformCatalogIfNeeded(cb) {
   if (uniformCatalog.length > 0) { if (cb) cb(); return; }
@@ -2124,7 +2129,44 @@ function resetUniformForm() {
   populateUniformSizeSelect('uniformPantsSize', []);
   document.getElementById('uniformShirtSize').disabled = true;
   document.getElementById('uniformPantsSize').disabled = true;
+  setUniformEditMode(false);
 }
+
+// เปิด/ปิดโหมด "เปลี่ยนชุดฟอร์ม" - สลับข้อความปุ่มบันทึก/แบนเนอร์แจ้งเตือนให้ตรงกับโหมดปัจจุบัน
+function setUniformEditMode(on) {
+  uniformEditMode = on;
+  document.getElementById('uniformEditModeBanner').classList.toggle('hidden', !on);
+  document.getElementById('btnSubmitUniformClaim').textContent = on ? 'บันทึกการแก้ไข' : 'บันทึกการเบิกชุดบรรจุ';
+}
+
+document.getElementById('btnUniformEditMode').addEventListener('click', function () {
+  if (!uniformCurrentEmp) return;
+  const btn = this;
+  const oldText = btn.textContent;
+  btn.disabled = true; btn.textContent = 'กำลังโหลด...';
+
+  loadUniformCatalogIfNeeded(function () {
+    google.script.run.withSuccessHandler(function (res) {
+      btn.disabled = false; btn.textContent = oldText;
+      if (!res.success) { Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: res.message, background: '#1e1a18', color: '#fff' }); return; }
+      if (!res.found) { Swal.fire({ icon: 'info', title: 'ยังไม่มีประวัติการเบิก', text: 'พนักงานคนนี้ยังไม่เคยเบิกชุดบรรจุ จึงยังไม่มีรายการให้แก้ไข', background: '#1e1a18', color: '#fff' }); return; }
+
+      const d = res.detail;
+      document.getElementById('uniformShirtItem').value = d.shirtItem || '';
+      updateUniformSizeOptions('shirt');
+      document.getElementById('uniformShirtSize').value = d.shirtSize || '';
+      document.getElementById('uniformPantsItem').value = d.pantsItem || '';
+      updateUniformSizeOptions('pants');
+      document.getElementById('uniformPantsSize').value = d.pantsSize || '';
+      document.getElementById('uniformStrapItem').value = d.strapItem || '';
+
+      setUniformEditMode(true);
+    }).withFailureHandler(function (err) {
+      btn.disabled = false; btn.textContent = oldText;
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, background: '#1e1a18', color: '#fff' });
+    }).getLatestUniformClaimDetail(dashboardPassword, uniformCurrentEmp.code);
+  });
+});
 
 // ตัวเลือก "แถบสี" ดึงมาจากชีท "ราคาสินค้า" คอลัมน์ A โดยตรง (ทุกแถวที่ขึ้นต้นด้วย "แถบสี" -> category 'strap' จาก getUniformCatalog)
 function populateUniformStrapOptions() {
@@ -2175,18 +2217,19 @@ document.getElementById('btnSubmitUniformClaim').addEventListener('click', funct
 
   const btn = this;
   const oldText = btn.textContent;
+  const wasEditMode = uniformEditMode;
   btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
 
   google.script.run.withSuccessHandler(function (res) {
-    btn.disabled = false; btn.textContent = oldText;
-    if (!res.success) { Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: res.message, background: '#1e1a18', color: '#fff' }); return; }
-    Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', text: res.items, background: '#1e1a18', color: '#fff', confirmButtonColor: '#f5860f' });
+    btn.disabled = false;
+    if (!res.success) { btn.textContent = oldText; Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: res.message, background: '#1e1a18', color: '#fff' }); return; }
+    Swal.fire({ icon: 'success', title: wasEditMode ? 'บันทึกการแก้ไขสำเร็จ' : 'บันทึกสำเร็จ', text: res.items, background: '#1e1a18', color: '#fff', confirmButtonColor: '#f5860f' });
     resetUniformForm();
     loadUniformHistory(uniformCurrentEmp.code);
   }).withFailureHandler(function (err) {
     btn.disabled = false; btn.textContent = oldText;
     Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, background: '#1e1a18', color: '#fff' });
-  }).submitUniformClaim(dashboardPassword, uniformCurrentEmp.code, shirtItem, shirtSize, pantsItem, pantsSize, strapItem);
+  }).submitUniformClaim(dashboardPassword, uniformCurrentEmp.code, shirtItem, shirtSize, pantsItem, pantsSize, strapItem, uniformEditMode);
 });
 
 function loadUniformHistory(code) {
@@ -2197,7 +2240,9 @@ function loadUniformHistory(code) {
     const history = res.history || [];
     if (history.length === 0) { wrap.innerHTML = '<p class="text-white/40 text-xs">ยังไม่มีประวัติการเบิก</p>'; return; }
     wrap.innerHTML = history.map(function (h) {
-      return '<div class="flex items-center justify-between text-xs bg-[#1a1614] rounded-lg px-3 py-2"><span>' + h.items + '</span><span class="text-white/40 shrink-0 ml-3">' + h.updatedAt + '</span></div>';
+      const isCancelled = h.status === 'ยกเลิกคำสั่งเบิก';
+      const statusBadge = h.status ? '<span class="' + (isCancelled ? 'text-red-400' : 'text-[#f5860f]') + ' shrink-0 ml-2">(' + h.status + ')</span>' : '';
+      return '<div class="flex items-center justify-between text-xs bg-[#1a1614] rounded-lg px-3 py-2 ' + (isCancelled ? 'opacity-50' : '') + '"><span>' + h.items + statusBadge + '</span><span class="text-white/40 shrink-0 ml-3">' + h.updatedAt + '</span></div>';
     }).join('');
   }).withFailureHandler(function (err) {
     wrap.innerHTML = '<p class="text-red-500 text-xs">' + err.message + '</p>';
@@ -2406,7 +2451,6 @@ function searchSpecialEmployee() {
     document.getElementById('specialFormWrap').classList.remove('hidden');
     resetSpecialForm();
     loadSpecialCatalogIfNeeded();
-    loadSpecialHistory(emp.code);
   }).withFailureHandler(function (err) {
     Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, background: '#1e1a18', color: '#fff' });
   }).getEmployeeByCode(code);
@@ -2418,6 +2462,7 @@ function resetSpecialForm() {
   document.getElementById('specialAddSize').innerHTML = '<option value="">ไม่มีไซส์</option>';
   document.getElementById('specialAddSize').disabled = true;
   document.getElementById('specialAddQty').value = 1;
+  document.getElementById('specialExtraText').value = '';
   renderSpecialCart();
 }
 
@@ -2476,33 +2521,18 @@ document.getElementById('btnSubmitSpecialClaim').addEventListener('click', funct
   const btn = this;
   const oldText = btn.textContent;
   btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  const extraText = document.getElementById('specialExtraText').value.trim();
 
   google.script.run.withSuccessHandler(function (res) {
     btn.disabled = false; btn.textContent = oldText;
     if (!res.success) { Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: res.message, background: '#1e1a18', color: '#fff' }); return; }
     Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', text: res.items, background: '#1e1a18', color: '#fff', confirmButtonColor: '#f5860f' });
     resetSpecialForm();
-    loadSpecialHistory(specialCurrentEmp.code);
   }).withFailureHandler(function (err) {
     btn.disabled = false; btn.textContent = oldText;
     Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, background: '#1e1a18', color: '#fff' });
-  }).submitSpecialClaim(dashboardPassword, specialCurrentEmp.code, JSON.stringify(specialCart));
+  }).submitSpecialClaim(dashboardPassword, specialCurrentEmp.code, JSON.stringify(specialCart), extraText);
 });
-
-function loadSpecialHistory(code) {
-  const wrap = document.getElementById('specialHistoryList');
-  wrap.innerHTML = '<p class="text-white/40 text-xs">กำลังโหลด...</p>';
-  google.script.run.withSuccessHandler(function (res) {
-    if (!res.success) { wrap.innerHTML = '<p class="text-red-500 text-xs">' + res.message + '</p>'; return; }
-    const history = res.history || [];
-    if (history.length === 0) { wrap.innerHTML = '<p class="text-white/40 text-xs">ยังไม่มีประวัติการเบิก</p>'; return; }
-    wrap.innerHTML = history.map(function (h) {
-      return '<div class="flex items-center justify-between text-xs bg-[#1a1614] rounded-lg px-3 py-2"><span>' + h.items + '</span><span class="text-white/40 shrink-0 ml-3">' + h.updatedAt + '</span></div>';
-    }).join('');
-  }).withFailureHandler(function (err) {
-    wrap.innerHTML = '<p class="text-red-500 text-xs">' + err.message + '</p>';
-  }).getEmployeeSpecialHistory(dashboardPassword, code);
-}
 
 document.getElementById('dashSearch').addEventListener('input', function (e) {
   const q = e.target.value.trim();
