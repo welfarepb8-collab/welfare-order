@@ -108,10 +108,10 @@ const UNIFORM_STATUS_RECEIVED = UNIFORM_CLAIM_STATUSES[UNIFORM_CLAIM_STATUSES.le
  * ต่างกันตรงที่: (1) รายการสินค้าเบิกได้อิสระจากชีท "รายการสินค้าเบิก" ไม่จำกัดเฉพาะเสื้อ/กางเกง/แถบสี
  *              (2) จำนวนกรอกเองได้อิสระ (ไม่ล็อกที่ 3 ชิ้นเหมือนเบิกชุดบรรจุ)
  *              (3) ไม่เช็คสต็อก (ชีท "รายการสินค้าเบิก" ไม่มีคอลัมน์สถานะสต็อก)
- * ลำดับคอลัมน์จริงในชีท "เบิกพิเศษ": A=วันที่บันทึก, B=คำสั่งเบิก, C=รหัสพนักงาน, D=ชื่อ-สกุล, E=สังกัด, F=รายการ, G=Size, H=จำนวน, I=สถานะ, J=วันที่สถานะและเวลา, K=หมายเหตุ
+ * ลำดับคอลัมน์จริงในชีท "เบิกพิเศษ": A=วันที่บันทึก, B=คำสั่งเบิก, C=รหัสพนักงาน, D=ชื่อ-สกุล, E=สังกัด, F=รายการ, G=Size, H=จำนวน, I=สถานะ, J=วันที่สถานะและเวลา, K=หมายเหตุ, L=ข้อความเพิ่มเติม (กรอกจากช่องข้อความเหนือปุ่ม "บันทึกการเบิกพิเศษ")
  */
-const SPECIAL_CLAIM_HEADERS = ['วันที่บันทึก', 'คำสั่งเบิก', 'รหัสพนักงาน', 'ชื่อ-สกุล', 'สังกัด', 'รายการ', 'Size', 'จำนวน', 'สถานะ', 'วันที่สถานะและเวลา', 'หมายเหตุ'];
-const SPECIAL_CLAIM_COL = { UPDATED_AT: 1, CLAIM_ID: 2, CODE: 3, NAME: 4, DEPT: 5, ITEM: 6, SIZE: 7, QTY: 8, STATUS: 9, STATUS_UPDATED_AT: 10, NOTE: 11 };
+const SPECIAL_CLAIM_HEADERS = ['วันที่บันทึก', 'คำสั่งเบิก', 'รหัสพนักงาน', 'ชื่อ-สกุล', 'สังกัด', 'รายการ', 'Size', 'จำนวน', 'สถานะ', 'วันที่สถานะและเวลา', 'หมายเหตุ', 'ข้อความเพิ่มเติม'];
+const SPECIAL_CLAIM_COL = { UPDATED_AT: 1, CLAIM_ID: 2, CODE: 3, NAME: 4, DEPT: 5, ITEM: 6, SIZE: 7, QTY: 8, STATUS: 9, STATUS_UPDATED_AT: 10, NOTE: 11, EXTRA_TEXT: 12 };
 
 /* ===== สถานะคำสั่งเบิกพิเศษ (สำหรับปุ่มอัปเดตสถานะในเมนู "เบิกพิเศษวันนี้") =====
  * ลำดับสถานะปกติ: รับรายการสินค้า -> กำลังเตรียม -> พร้อมให้รับสินค้า -> รับสินค้า
@@ -584,10 +584,85 @@ function getEmployeeUniformHistory(password, empCode) {
 }
 
 /**
+ * หาแถวทั้งหมดของ "คำสั่งเบิกล่าสุด" (เลขที่คำสั่งเบิกมากที่สุด) ของพนักงาน 1 คน ในชีท "เบิกชุดบรรจุ"
+ * ใช้ทั้งตอนดึงข้อมูลมา prefill ฟอร์มตอนกด "เปลี่ยนชุดฟอร์ม" (getLatestUniformClaimDetail)
+ * และตอนยกเลิกคำสั่งเบิกเก่าอัตโนมัติเมื่อบันทึกแบบแก้ไข (submitUniformClaim กรณี isEdit = true)
+ * เลขที่คำสั่งเบิกมีรูปแบบ 'UB' + yyMMddHHmmss จึงเทียบ "ล่าสุด" ด้วยการเปรียบเทียบสตริงตรงๆ ได้ (ค่ามากกว่า = ใหม่กว่า)
+ * คืนค่า null ถ้าพนักงานคนนี้ยังไม่เคยมีประวัติการเบิกเลย
+ */
+function _findLatestUniformClaimRows(sh, empCode) {
+  const lastRow = sh.getLastRow();
+  if (lastRow <= 1) return null;
+
+  const data = sh.getRange(2, 1, lastRow - 1, UNIFORM_CLAIM_HEADERS.length).getValues();
+  const rowsByClaim = {};
+  let latestClaimId = '';
+
+  data.forEach(function (row, i) {
+    const code = _norm(row[UNIFORM_CLAIM_COL.CODE - 1]);
+    if (code.toLowerCase() !== empCode.toLowerCase()) return;
+    const claimId = _norm(row[UNIFORM_CLAIM_COL.CLAIM_ID - 1]);
+    if (!claimId) return; // แถวเก่าที่ไม่มีเลขที่คำสั่งเบิก ข้ามไป (ไม่รู้จะจัดกลุ่มกับแถวไหน)
+
+    if (!rowsByClaim[claimId]) rowsByClaim[claimId] = [];
+    rowsByClaim[claimId].push({
+      rowNum: 2 + i,
+      item: _norm(row[UNIFORM_CLAIM_COL.ITEM - 1]),
+      size: _norm(row[UNIFORM_CLAIM_COL.SIZE - 1]),
+      status: _norm(row[UNIFORM_CLAIM_COL.STATUS - 1])
+    });
+    if (claimId > latestClaimId) latestClaimId = claimId;
+  });
+
+  if (!latestClaimId) return null;
+  return { claimId: latestClaimId, rows: rowsByClaim[latestClaimId] };
+}
+
+/**
+ * หาหมวดหมู่ (shirt/pants/strap) ของชื่อรายการ ใช้ตอน prefill ฟอร์มแก้ไข (getLatestUniformClaimDetail)
+ * เช็คจาก UNIFORM_ITEMS_CONFIG ก่อน (เสื้อ/กางเกงที่กำหนดชื่อตายตัวไว้) ถ้าไม่เจอค่อยเช็คจาก catalog (ครอบคลุมแถบสีที่อ่านจากช่วงแถว 115-129)
+ */
+function _uniformItemCategory(itemName, catalog) {
+  const cfg = UNIFORM_ITEMS_CONFIG.find(function (c) { return c.match === itemName; });
+  if (cfg) return cfg.category;
+  const found = catalog.find(function (p) { return p.item === itemName; });
+  return found ? found.category : '';
+}
+
+/**
+ * ฝั่งแอดมิน (ปุ่ม "เปลี่ยนชุดฟอร์ม" เหนือฟอร์มเบิกชุดบรรจุ):
+ * ดึงรายละเอียด "คำสั่งเบิกล่าสุด" ของพนักงาน 1 คน แยกเป็นเสื้อ/กางเกง/แถบสี พร้อมไซส์ เพื่อเอาไปเติมในฟอร์มให้แก้ไขต่อ
+ * ไม่สนใจว่าคำสั่งเบิกล่าสุดจะมีสถานะอะไรอยู่ (แม้จะเคยถูกยกเลิกไปแล้วก็ยังถือเป็น "ล่าสุด" ตามเวลาที่บันทึก)
+ */
+function getLatestUniformClaimDetail(password, empCode) {
+  if (!_isDashboardAllowed(password)) return { success: false, message: 'รหัสผ่านไม่ถูกต้อง' };
+
+  empCode = _norm(empCode);
+  if (!empCode) return { success: false, message: 'ไม่พบรหัสพนักงาน' };
+
+  const sh = _uniformClaimSheet();
+  const latest = _findLatestUniformClaimRows(sh, empCode);
+  if (!latest) return { success: true, found: false };
+
+  const catalog = getUniformCatalog();
+  const detail = { shirtItem: '', shirtSize: '', pantsItem: '', pantsSize: '', strapItem: '' };
+  latest.rows.forEach(function (r) {
+    const cat = _uniformItemCategory(r.item, catalog);
+    if (cat === 'shirt') { detail.shirtItem = r.item; detail.shirtSize = r.size; }
+    else if (cat === 'pants') { detail.pantsItem = r.item; detail.pantsSize = r.size; }
+    else if (cat === 'strap') { detail.strapItem = r.item; }
+  });
+
+  return { success: true, found: true, claimId: latest.claimId, detail: detail };
+}
+
+/**
  * ฝั่งแอดมิน: บันทึกการเบิกชุดบรรจุของพนักงาน 1 คน (เลือกเสื้อ/กางเกงพร้อมไซส์ อย่างน้อย 1 รายการ)
  * ตรวจสอบสต็อกจาก getUniformCatalog ก่อนบันทึกทุกครั้ง
+ * ถ้า isEdit = true (กดจากปุ่ม "เปลี่ยนชุดฟอร์ม") จะสร้างคำสั่งเบิกใหม่ตามปกติ แต่ก่อนหน้านั้นจะยกเลิก
+ * (ทำเครื่องหมายสถานะ = "ยกเลิกคำสั่งเบิก") คำสั่งเบิกล่าสุดของพนักงานคนนี้ให้อัตโนมัติก่อนเสมอ
  */
-function submitUniformClaim(password, empCode, shirtItem, shirtSize, pantsItem, pantsSize, strapItem) {
+function submitUniformClaim(password, empCode, shirtItem, shirtSize, pantsItem, pantsSize, strapItem, isEdit) {
   if (!_isDashboardAllowed(password)) return { success: false, message: 'รหัสผ่านไม่ถูกต้อง' };
 
   empCode = _norm(empCode);
@@ -637,6 +712,23 @@ function submitUniformClaim(password, empCode, shirtItem, shirtSize, pantsItem, 
 
   try {
     const sh = _uniformClaimSheet();
+
+    // โหมดแก้ไข (isEdit = true, กดจากปุ่ม "เปลี่ยนชุดฟอร์ม"): ยกเลิกคำสั่งเบิกล่าสุดของพนักงานคนนี้ให้อัตโนมัติก่อน
+    // แล้วค่อยสร้างคำสั่งเบิกใหม่ต่อท้ายด้านล่าง (ไม่ทับ/ไม่แก้แถวเดิม เพื่อให้ยังเห็นประวัติเดิมในชีทครบ)
+    let cancelledClaimId = '';
+    if (isEdit) {
+      const latest = _findLatestUniformClaimRows(sh, empCode);
+      if (latest && latest.rows.length) {
+        const cancelNow = new Date();
+        latest.rows.forEach(function (r) {
+          sh.getRange(r.rowNum, UNIFORM_CLAIM_COL.STATUS).setValue(UNIFORM_CLAIM_CANCELLED_STATUS);
+          sh.getRange(r.rowNum, UNIFORM_CLAIM_COL.STATUS_UPDATED_AT).setValue(cancelNow);
+          sh.getRange(r.rowNum, UNIFORM_CLAIM_COL.NOTE).setValue('ถูกแทนที่ด้วยคำสั่งเบิกใหม่ (เปลี่ยนชุดฟอร์ม)');
+        });
+        cancelledClaimId = latest.claimId;
+      }
+    }
+
     // บันทึกเป็น Date object จริง (เหมือนคอลัมน์ TIMESTAMP ในชีท "รายการสั่งซื้อ") แทนข้อความ พ.ศ.
     // เพื่อให้ Google Sheets มองเป็นวันที่จริง ค้นหา/กรอง/เรียงลำดับในชีทได้ปกติ
     // (ฟังก์ชัน _uniformRowIsoDate และ _normUniformUpdatedAt รองรับ Date object อยู่แล้ว จึงไม่กระทบการแสดงผล/การเทียบช่วงวันที่)
@@ -652,7 +744,14 @@ function submitUniformClaim(password, empCode, shirtItem, shirtSize, pantsItem, 
       const label = r.size ? (r.item + ' (' + r.size + ')') : r.item;
       return label + ' x' + UNIFORM_CLAIM_FIXED_QTY;
     }).join(', ');
-    return { success: true, message: 'บันทึกการเบิกชุดบรรจุแล้ว', empCode: emp.code, claimId: claimId, items: itemsLabel };
+    return {
+      success: true,
+      message: isEdit ? 'บันทึกการเปลี่ยนชุดฟอร์มแล้ว' : 'บันทึกการเบิกชุดบรรจุแล้ว',
+      empCode: emp.code,
+      claimId: claimId,
+      items: itemsLabel,
+      cancelledClaimId: cancelledClaimId
+    };
   } catch (err) {
     return { success: false, message: 'เกิดข้อผิดพลาด: ' + err.message };
   } finally {
@@ -1200,7 +1299,7 @@ function getSpecialStatusByCode(code) {
  * itemsJson = ข้อความ JSON ของ array [{ item, size, qty }, ...] อย่างน้อย 1 รายการ (ส่งมาจาก Client เป็น JSON string
  * เพื่อรองรับจำนวนรายการที่ไม่แน่นอน ต่างจาก submitUniformClaim ที่มีแค่ 3 ช่องคงที่)
  */
-function submitSpecialClaim(password, empCode, itemsJson) {
+function submitSpecialClaim(password, empCode, itemsJson, extraText) {
   if (!_isDashboardAllowed(password)) return { success: false, message: 'รหัสผ่านไม่ถูกต้อง' };
 
   empCode = _norm(empCode);
@@ -1247,10 +1346,12 @@ function submitSpecialClaim(password, empCode, itemsJson) {
     const now = new Date();
     // เลขที่คำสั่งเบิก: สร้างใหม่ทุกครั้งที่กดบันทึก 1 ครั้ง ใช้จัดกลุ่มรายการที่เบิกพร้อมกันในครั้งเดียว (เหมือน UB ของเบิกชุดบรรจุ)
     const claimId = 'SB' + Utilities.formatDate(now, 'GMT+7', 'yyMMddHHmmss');
+    const extraTextVal = _norm(extraText);
     // A=วันที่บันทึก, B=คำสั่งเบิก, C=รหัสพนักงาน, D=ชื่อ-สกุล, E=สังกัด, F=รายการ, G=Size, H=จำนวน,
-    // I=สถานะ (ตั้งต้น = SPECIAL_CLAIM_STATUSES[0] ทันทีที่บันทึก), J=วันที่สถานะและเวลา (ตั้งต้น = เวลาที่บันทึกนี้เอง), K=หมายเหตุ (ว่างไว้ก่อน)
+    // I=สถานะ (ตั้งต้น = SPECIAL_CLAIM_STATUSES[0] ทันทีที่บันทึก), J=วันที่สถานะและเวลา (ตั้งต้น = เวลาที่บันทึกนี้เอง),
+    // K=หมายเหตุ (ว่างไว้ก่อน), L=ข้อความเพิ่มเติม (จากช่องข้อความเหนือปุ่มบันทึก)
     pickedRows.forEach(function (r) {
-      sh.appendRow([now, claimId, emp.code, emp.name, emp.deptLabel || emp.dept, r.item, r.size || '', r.qty, SPECIAL_CLAIM_STATUSES[0], now, '']);
+      sh.appendRow([now, claimId, emp.code, emp.name, emp.deptLabel || emp.dept, r.item, r.size || '', r.qty, SPECIAL_CLAIM_STATUSES[0], now, '', extraTextVal]);
     });
     const itemsLabel = pickedRows.map(function (r) {
       const label = r.size ? (r.item + ' (' + r.size + ')') : r.item;
