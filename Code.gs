@@ -208,6 +208,7 @@ const API_FUNCTIONS = {
   getEmployeeUniformHistory: getEmployeeUniformHistory,
   getEmployeeUniformPassData: getEmployeeUniformPassData,
   getItemSummary: getItemSummary,
+  getNotificationCounts: getNotificationCounts,
   getOrderStatusByCode: getOrderStatusByCode,
   getPassData: getPassData,
   getPickupLocations: getPickupLocations,
@@ -220,6 +221,7 @@ const API_FUNCTIONS = {
   getUniformCatalogData: getUniformCatalogData,
   getUniformPassData: getUniformPassData,
   getUniformStatusByCode: getUniformStatusByCode,
+  markNotificationSeen: markNotificationSeen,
   searchOrders: searchOrders,
   searchSpecialClaims: searchSpecialClaims,
   searchUniformClaims: searchUniformClaims,
@@ -2216,6 +2218,99 @@ function updateOrderData(password, orderId, newStatus, newNote) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/* ================================ NOTIFICATIONS (แจ้งเตือนข้อมูลกรอกเข้ามาใหม่) ================================
+ * แจ้งเตือนจำนวนรายการที่เข้ามาใหม่ (นับตั้งแต่ครั้งล่าสุดที่แอดมินเปิดดูเมนูนั้น) สำหรับ 3 เมนู:
+ * 1) คำสั่งซื้อสินค้า (ORDERS)  2) รายงานเบิกชุดบรรจุ (UNIFORM_CLAIM)  3) รายงานเบิกพิเศษ (SPECIAL_CLAIM)
+ * *** เห็นได้เฉพาะรหัสผ่านสิทธิ์เต็ม (DASHBOARD_PASSWORD / _isFullAuth) เท่านั้น ***
+ * ไม่แสดงกับรหัสผ่านสิทธิ์จำกัด (DASHBOARD_ONLY_PASSWORD) เด็ดขาด (เช็คสิทธิ์ในทั้ง 2 ฟังก์ชันด้านล่าง)
+ * ใช้ PropertiesService (Script Properties) เก็บเวลาล่าสุดที่แอดมิน "เปิดดู" แต่ละเมนู เพราะระบบนี้ไม่มีบัญชีผู้ใช้แยกรายคน
+ * มีแค่รหัสผ่านชุดเดียวใช้ร่วมกัน จึงถือเป็นฐานเวลากลางที่ทุกคนที่ล็อกอินด้วยรหัสผ่านสิทธิ์เต็มใช้ร่วมกัน
+ */
+const NOTIF_CONFIG = {
+  orders:  { sheetName: SHEET_NAMES.ORDERS,        headerLen: ORDER_HEADERS.length,        tsCol: ORDER_COL.TIMESTAMP,          idCol: ORDER_COL.ORDER_ID,        propKey: 'NOTIF_LASTSEEN_ORDERS' },
+  uniform: { sheetName: SHEET_NAMES.UNIFORM_CLAIM, headerLen: UNIFORM_CLAIM_HEADERS.length, tsCol: UNIFORM_CLAIM_COL.UPDATED_AT, idCol: UNIFORM_CLAIM_COL.CLAIM_ID, propKey: 'NOTIF_LASTSEEN_UNIFORM' },
+  special: { sheetName: SHEET_NAMES.SPECIAL_CLAIM, headerLen: SPECIAL_CLAIM_HEADERS.length, tsCol: SPECIAL_CLAIM_COL.UPDATED_AT, idCol: SPECIAL_CLAIM_COL.CLAIM_ID, propKey: 'NOTIF_LASTSEEN_SPECIAL' }
+};
+
+/**
+ * แปลงค่าดิบของคอลัมน์วันที่/เวลาให้เป็น epoch milliseconds เพื่อใช้เทียบว่า "ใหม่กว่า" เวลาที่เปิดดูล่าสุดหรือไม่
+ * รองรับทั้ง Date object จริง (แถวใหม่จากการบันทึกปกติ) และข้อความรูปแบบ "dd/mm/yyyy(พ.ศ.) HH:mm:ss" (แถวเก่า)
+ * คืนค่า 0 ถ้าแปลงไม่ได้ (ถือว่าเก่าที่สุด ไม่นับเป็นของใหม่)
+ */
+function _rowEpochMs(rawValue) {
+  if (rawValue instanceof Date) return rawValue.getTime();
+  const text = _norm(rawValue);
+  if (!text) return 0;
+  const parts = text.split(' ');
+  const dmy = parts[0].split('/');
+  if (dmy.length !== 3) return 0;
+  const day = Number(dmy[0]), month = Number(dmy[1]);
+  let year = Number(dmy[2]);
+  if (!day || !month || !year) return 0;
+  if (year > 2400) year -= 543; // ปี พ.ศ. -> ค.ศ.
+  const hms = (parts[1] || '00:00:00').split(':');
+  const hour = Number(hms[0]) || 0, min = Number(hms[1]) || 0, sec = Number(hms[2]) || 0;
+  // ตีความเป็นเวลาโซน GMT+7 แล้วแปลงกลับเป็น epoch UTC เพื่อให้เทียบกับ Date.now() ได้ตรงกัน
+  return Date.UTC(year, month - 1, day, hour, min, sec) - (7 * 60 * 60 * 1000);
+}
+
+/**
+ * นับจำนวน "รายการ" (กลุ่มตามเลขที่คำสั่งซื้อ/คำสั่งเบิก ไม่ใช่นับทีละแถว เพราะ 1 รายการอาจมีหลายแถว/หลายชิ้น เช่น เสื้อ+กางเกงคนละแถว)
+ * ที่มีเวลาบันทึกใหม่กว่า lastSeenMs ในชีทที่ระบุใน cfg (ดู NOTIF_CONFIG)
+ */
+function _countNewGroups(cfg, lastSeenMs) {
+  const sh = _sheet(cfg.sheetName);
+  const lastRow = sh.getLastRow();
+  if (lastRow <= 1) return 0;
+  const numCols = Math.max(cfg.headerLen, sh.getLastColumn());
+  const data = sh.getRange(2, 1, lastRow - 1, numCols).getValues();
+  const ids = {};
+  data.forEach(function (row) {
+    const ms = _rowEpochMs(row[cfg.tsCol - 1]);
+    if (ms > lastSeenMs) {
+      const id = _norm(row[cfg.idCol - 1]) || ('_row' + ms + '_' + Math.random());
+      ids[id] = true;
+    }
+  });
+  return Object.keys(ids).length;
+}
+
+/**
+ * ฝั่งแอดมิน (sidebar): ดึงจำนวนรายการใหม่ของทั้ง 3 เมนู (คำสั่งซื้อสินค้า / รายงานเบิกชุดบรรจุ / รายงานเบิกพิเศษ)
+ * นับตั้งแต่ครั้งล่าสุดที่แอดมินเปิดดูเมนูนั้น (ดู markNotificationSeen) *** ใช้ได้เฉพาะรหัสผ่านสิทธิ์เต็มเท่านั้น ***
+ * ถ้าเมนูไหนยังไม่เคยมีการตั้งค่าเวลาล่าสุดมาก่อน (ใช้ฟีเจอร์นี้ครั้งแรก) จะตั้งฐานเวลาเริ่มต้น = ตอนนี้ และคืนค่า 0
+ * เพื่อไม่ให้ข้อมูลเก่าที่มีอยู่แล้วทั้งหมดกลายเป็น "ใหม่" พรวดเดียวตอนเริ่มใช้ฟีเจอร์นี้ครั้งแรก
+ */
+function getNotificationCounts(password) {
+  if (!_isFullAuth(password)) return { success: false, message: 'ฟีเจอร์นี้ใช้ได้เฉพาะรหัสผ่านสิทธิ์เต็มเท่านั้น' };
+
+  const props = PropertiesService.getScriptProperties();
+  const counts = {};
+  Object.keys(NOTIF_CONFIG).forEach(function (key) {
+    const cfg = NOTIF_CONFIG[key];
+    const lastSeenStr = props.getProperty(cfg.propKey);
+    if (!lastSeenStr) {
+      props.setProperty(cfg.propKey, String(Date.now()));
+      counts[key] = 0;
+      return;
+    }
+    counts[key] = _countNewGroups(cfg, Number(lastSeenStr) || 0);
+  });
+  return { success: true, counts: counts };
+}
+
+/**
+ * ฝั่งแอดมิน: บันทึกว่าเพิ่งเปิดดูเมนู menuKey แล้ว ('orders' | 'uniform' | 'special')
+ * ตัวนับแจ้งเตือนของเมนูนั้นจะรีเซ็ตเป็น 0 (นับใหม่เฉพาะรายการที่เข้ามาหลังจากนี้) *** ใช้ได้เฉพาะรหัสผ่านสิทธิ์เต็มเท่านั้น ***
+ */
+function markNotificationSeen(password, menuKey) {
+  if (!_isFullAuth(password)) return { success: false, message: 'ฟีเจอร์นี้ใช้ได้เฉพาะรหัสผ่านสิทธิ์เต็มเท่านั้น' };
+  const cfg = NOTIF_CONFIG[_norm(menuKey)];
+  if (!cfg) return { success: false, message: 'เมนูไม่ถูกต้อง' };
+  PropertiesService.getScriptProperties().setProperty(cfg.propKey, String(Date.now()));
+  return { success: true };
 }
 
 function _todayStr() { return Utilities.formatDate(new Date(), 'GMT+7', 'yyyy-MM-dd'); }
