@@ -53,6 +53,9 @@
     .dash-nav-btn.active { background: linear-gradient(135deg,#f5860f,#ffb347); color: #1a1210; }
     .landing-nav-btn { color: rgba(255,255,255,0.85); }
     .landing-nav-btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+    /* ============ Badge แจ้งเตือนข้อมูลกรอกเข้ามาใหม่ (เห็นเฉพาะรหัสผ่านสิทธิ์เต็ม) ============ */
+    .notif-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9999px; background: #f5860f; color: #1a1210; font-size: 10.5px; font-weight: 700; line-height: 1; }
+    .dash-nav-btn.active .notif-badge { background: rgba(26,18,16,0.85); color: #fff; }
 
     /* ============ ใบผ่านชุดบรรจุ (แสดงเป็น modal ในหน้าเดิม แทนการเปิดแท็บใหม่ เพื่อเลี่ยงปัญหาแท็บเปิดแล้วขึ้นหน้าขาวเปล่าใน webview/เบราว์เซอร์บางตัว) ============ */
     #uniformPassModal { background: rgba(0,0,0,0.6); }
@@ -259,15 +262,18 @@
         <div id="navDashboardSubmenu" class="pl-[30px] space-y-1">
           <button id="navDashOrders" class="dash-nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition text-left">
             <span class="w-1.5 h-1.5 rounded-full bg-current opacity-50 shrink-0"></span>
-            <span>คำสั่งซื้อสินค้า</span>
+            <span class="flex-1">คำสั่งซื้อสินค้า</span>
+            <span id="notifBadgeOrders" class="notif-badge hidden">0</span>
           </button>
           <button id="navDashUniformToday" class="dash-nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition text-left">
             <span class="w-1.5 h-1.5 rounded-full bg-current opacity-50 shrink-0"></span>
-            <span>รายงานเบิกชุดบรรจุ</span>
+            <span class="flex-1">รายงานเบิกชุดบรรจุ</span>
+            <span id="notifBadgeUniform" class="notif-badge hidden">0</span>
           </button>
           <button id="navDashSpecialToday" class="dash-nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition text-left">
             <span class="w-1.5 h-1.5 rounded-full bg-current opacity-50 shrink-0"></span>
-            <span>รายงานเบิกพิเศษ</span>
+            <span class="flex-1">รายงานเบิกพิเศษ</span>
+            <span id="notifBadgeSpecial" class="notif-badge hidden">0</span>
           </button>
         </div>
         <button id="navUniform" class="dash-nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left">
@@ -615,11 +621,13 @@
       <div class="p-3 space-y-1 overflow-y-auto">
         <button id="landingDashOrders" class="landing-nav-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition text-left hover:bg-white/10">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M8 17V9m4 8V5m4 12v-6"/></svg>
-          <span>คำสั่งซื้อสินค้า</span>
+          <span class="flex-1">คำสั่งซื้อสินค้า</span>
+          <span id="notifBadgeOrdersLanding" class="notif-badge hidden">0</span>
         </button>
         <button id="landingDashUniformToday" class="landing-nav-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition text-left hover:bg-white/10">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-          <span>รายการเบิกชุดบรรจุ</span>
+          <span class="flex-1">รายการเบิกชุดบรรจุ</span>
+          <span id="notifBadgeUniformLanding" class="notif-badge hidden">0</span>
         </button>
         <button id="landingUniform" class="landing-nav-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition text-left hover:bg-white/10">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 2l3 3h6l3-3M6 2L3 6l3 3 2-2v13h8V7l2 2 3-3-3-4M11 5v3M13 5v3"/></svg>
@@ -627,7 +635,8 @@
         </button>
         <button id="landingDashSpecialToday" class="landing-nav-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition text-left hover:bg-white/10">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-          <span>รายงานเบิกพิเศษ</span>
+          <span class="flex-1">รายงานเบิกพิเศษ</span>
+          <span id="notifBadgeSpecialLanding" class="notif-badge hidden">0</span>
         </button>
         <button id="landingSpecial" class="landing-nav-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition text-left hover:bg-white/10">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7h-9m9 0v10a2 2 0 01-2 2H9a2 2 0 01-2-2V7m9 0V5a2 2 0 00-2-2h-3a2 2 0 00-2 2v2M5 7h4"/></svg>
@@ -755,6 +764,10 @@ let activeCategory = 'shirt';
 let selectedMode = null;
 let dashboardPassword = null;
 let dashboardAuthLevel = null; // 'full' = เข้าได้ทุกเมนู | 'dashboard' = เข้าได้เฉพาะเมนูแดชบอร์ด
+// ============ แจ้งเตือนข้อมูลกรอกเข้ามาใหม่ (คำสั่งซื้อสินค้า / เบิกชุดบรรจุ / เบิกพิเศษ) - เห็นเฉพาะรหัสผ่านสิทธิ์เต็ม ============
+let notifCounts = { orders: 0, uniform: 0, special: 0 };
+let notifPollTimer = null;
+const NOTIF_POLL_MS = 45000; // รีเฟรชอัตโนมัติทุก 45 วินาที (อยู่ในช่วง 30-60 วิ) ตอนแดชบอร์ดเปิดอยู่
 let selectedPickupLocation = null;
 let selectedPhone = null;
 
@@ -1648,7 +1661,9 @@ document.getElementById('btnDashboard').addEventListener('click', function () {
           Swal.close();
           dashboardPassword = enteredPassword;
           dashboardAuthLevel = authRes.level; // 'full' | 'dashboard'
+          notifCounts = { orders: 0, uniform: 0, special: 0 }; // เคลียร์ตัวเลขแจ้งเตือนของ session ก่อนหน้า (ถ้ามี) ก่อนเริ่ม session ใหม่
           applyAuthLevelUI();
+          startNotifPolling();
           const today = new Date().toLocaleDateString('en-CA');
           document.getElementById('dashDateFrom').value = today;
           document.getElementById('dashDateTo').value = today;
@@ -1711,12 +1726,75 @@ function applyAuthLevelUI() {
     btn.classList.toggle('pointer-events-none', restricted);
     btn.title = restricted ? 'รหัสผ่านนี้ใช้ได้เฉพาะเมนูแดชบอร์ดเท่านั้น' : '';
   });
+  renderNotifBadges();
+}
+
+// ============ แจ้งเตือนข้อมูลกรอกเข้ามาใหม่ (เห็นเฉพาะรหัสผ่านสิทธิ์เต็ม 'full' เท่านั้น) ============
+// วาด badge ตัวเลขแจ้งเตือนทั้งบน sidebar และหน้าตัวเลือก (landing) ให้ตรงกับ notifCounts ปัจจุบัน
+function renderNotifBadges() {
+  const idMap = {
+    orders:  ['notifBadgeOrders', 'notifBadgeOrdersLanding'],
+    uniform: ['notifBadgeUniform', 'notifBadgeUniformLanding'],
+    special: ['notifBadgeSpecial', 'notifBadgeSpecialLanding']
+  };
+  const visible = dashboardAuthLevel === 'full'; // สิทธิ์จำกัด (dashboard-only) ห้ามเห็น badge เด็ดขาด
+  Object.keys(idMap).forEach(function (key) {
+    const count = visible ? (notifCounts[key] || 0) : 0;
+    idMap[key].forEach(function (id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (count > 0) {
+        el.textContent = count > 99 ? '99+' : String(count);
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+      }
+    });
+  });
+}
+
+// ดึงจำนวนรายการใหม่ล่าสุดจากเซิร์ฟเวอร์ (เฉพาะรหัสผ่านสิทธิ์เต็ม)
+function refreshNotifCounts() {
+  if (!dashboardPassword || dashboardAuthLevel !== 'full') return;
+  google.script.run.withSuccessHandler(function (res) {
+    if (res && res.success) {
+      notifCounts = res.counts || { orders: 0, uniform: 0, special: 0 };
+      renderNotifBadges();
+    }
+  }).withFailureHandler(function (err) {
+    console.error('refreshNotifCounts error:', err);
+  }).getNotificationCounts(dashboardPassword);
+}
+
+// เริ่ม/หยุด poll ตัวเลขแจ้งเตือนเป็นระยะ ตอนแดชบอร์ดเปิดอยู่ (เรียกตอนล็อกอินสำเร็จ / หยุดตอน logout)
+function startNotifPolling() {
+  stopNotifPolling();
+  if (dashboardAuthLevel !== 'full') return;
+  refreshNotifCounts();
+  notifPollTimer = setInterval(refreshNotifCounts, NOTIF_POLL_MS);
+}
+function stopNotifPolling() {
+  if (notifPollTimer) { clearInterval(notifPollTimer); notifPollTimer = null; }
+}
+
+// บอกเซิร์ฟเวอร์ว่าเพิ่งเปิดดูเมนูนี้แล้ว ('orders' | 'uniform' | 'special') -> รีเซ็ต badge ของเมนูนั้นเป็น 0 ทันที (optimistic UI)
+function markNotifSeen(key) {
+  if (!dashboardPassword || dashboardAuthLevel !== 'full') return;
+  if (!notifCounts[key]) return; // ไม่มีของใหม่อยู่แล้ว ไม่ต้องยิง request เปล่าๆ
+  notifCounts[key] = 0;
+  renderNotifBadges();
+  google.script.run.withFailureHandler(function (err) {
+    console.error('markNotifSeen error:', err);
+  }).markNotificationSeen(dashboardPassword, key);
 }
 
 // "Log out" (sidebar, left side) - closes the console AND clears the saved session password
 document.getElementById('btnLogoutDash').addEventListener('click', function () {
   dashboardPassword = null;
   dashboardAuthLevel = null;
+  stopNotifPolling();
+  notifCounts = { orders: 0, uniform: 0, special: 0 };
+  renderNotifBadges();
   dashMode = 'employees'; dashActiveTab = 'employees'; uniformTodayMode = 'date'; specialTodayMode = 'date';
   document.getElementById('dashSearch').value = '';
   document.getElementById('uniformTodaySearch').value = '';
@@ -1811,6 +1889,7 @@ function switchDashTab(tab) {
     overviewEl.classList.remove('hidden'); gridEl.classList.remove('hidden'); gridLabelEl.classList.remove('hidden');
     searchWrap.classList.remove('hidden');
     pageTitle.textContent = 'คำสั่งซื้อสินค้า';
+    markNotifSeen('orders');
     const q = document.getElementById('dashSearch').value.trim();
     if (q) { dashMode = 'search'; runSearch(q); } else { dashMode = 'employees'; loadDashboard(); }
   } else if (tab === 'uniformToday') {
@@ -1819,6 +1898,7 @@ function switchDashTab(tab) {
     uniformTodayEl.classList.remove('hidden');
     statsGrid.classList.add('hidden');
     pageTitle.textContent = 'รายงานเบิกชุดบรรจุ (เลือกช่วงวันที่ หรือ ค้นหารหัสพนักงาน)';
+    markNotifSeen('uniform');
     const uq = document.getElementById('uniformTodaySearch').value.trim();
     if (uq) { searchUniformTodayByCode(uq); } else { loadUniformToday(); }
   } else if (tab === 'uniform') {
@@ -1833,6 +1913,7 @@ function switchDashTab(tab) {
     specialTodayEl.classList.remove('hidden');
     statsGrid.classList.add('hidden');
     pageTitle.textContent = 'รายงานเบิกพิเศษ (เลือกช่วงวันที่ หรือ ค้นหารหัสพนักงาน)';
+    markNotifSeen('special');
     const sq = document.getElementById('specialTodaySearch').value.trim();
     if (sq) { searchSpecialTodayByCode(sq); } else { loadSpecialToday(); }
   } else if (tab === 'special') {
