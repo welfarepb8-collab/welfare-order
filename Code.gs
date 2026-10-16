@@ -176,8 +176,8 @@ function checkDashboardAuth(password) {
 
 /* ================================ WEB APP ENTRY ================================ */
 function doGet(e) {
-  return HtmlService.createTemplateFromFile('Index')
-    .evaluate()
+  // เสิร์ฟไฟล์ Index.html ตรง ๆ (ไม่ผ่านระบบ template) เพื่อให้ฝังใน Google Sites ได้และโหลดเร็วขึ้น
+  return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('สั่งซื้อเครื่องแต่งกาย | Welfare Factory')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
