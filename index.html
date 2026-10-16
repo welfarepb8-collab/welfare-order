@@ -48,6 +48,22 @@
     .swal2-popup { font-family: 'Kanit','Noto Sans Thai',sans-serif !important; }
     .no-spinner::-webkit-outer-spin-button, .no-spinner::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     .no-spinner { -moz-appearance: textfield; }
+    /* ============ ช่องกรอกรหัสพนักงานแบบปิดข้อมูล: พิมพ์ทีละตัวจะแสดงเป็น X ============ */
+    .mask-wrap { position: relative; }
+    .mask-input, .mask-overlay {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 1rem; line-height: 1.5rem; font-weight: 500; letter-spacing: 0.14em;
+    }
+    .mask-input { color: transparent; -webkit-text-fill-color: transparent; caret-color: #f5860f; }
+    .mask-input::selection { background: rgba(245,134,15,0.35); }
+    .mask-input::placeholder {
+      -webkit-text-fill-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.3);
+      font-family: 'Kanit','Noto Sans Thai',sans-serif; letter-spacing: normal; font-weight: 400;
+    }
+    .mask-overlay {
+      position: absolute; top: 1px; left: 1px; right: 1px; bottom: 1px;
+      padding: 0.75rem 1rem; color: #fff; white-space: pre; overflow: hidden; pointer-events: none;
+    }
     .dash-nav-btn { color: rgba(255,255,255,0.6); }
     .dash-nav-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
     .dash-nav-btn.active { background: linear-gradient(135deg,#f5860f,#ffb347); color: #1a1210; }
@@ -155,18 +171,24 @@
       </div>
       <h2 class="font-medium text-lg mb-4" id="employeeSectionTitle">กรอกรหัสพนักงานเพื่อเริ่มสั่งซื้อ</h2>
       <div class="flex gap-2">
-        <input id="empCode" type="text" placeholder="กรอกรหัสพนักงาน..." class="flex-1 bg-panel2 border border-white/10 rounded-2xl px-4 py-3 outline-none focus:border-accent transition placeholder:text-white/30">
+        <div class="mask-wrap flex-1">
+          <input id="empCode" type="text" placeholder="กรอกรหัสพนักงาน..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" class="mask-input w-full bg-panel2 border border-white/10 rounded-2xl px-4 py-3 outline-none focus:border-accent transition">
+          <div id="empCodeMask" class="mask-overlay rounded-2xl" aria-hidden="true"></div>
+        </div>
         <button id="btnFetchEmp" class="bg-gradient-to-br from-accent to-accent2 text-[#1a1210] font-medium px-5 rounded-2xl hover:brightness-110 transition">ค้นหา</button>
       </div>
 
       <div id="empInfo" class="hidden mt-4 fade-in">
         <div class="bg-panel2 rounded-2xl p-4 flex items-center gap-3 border border-accent/30">
-          <div class="w-11 h-11 rounded-full bg-accent/20 flex items-center justify-center text-accent font-semibold" id="empAvatar"></div>
-          <div>
+          <div class="w-11 h-11 rounded-full bg-accent/20 flex items-center justify-center text-accent shrink-0" id="empAvatar">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 018 0v4"/></svg>
+          </div>
+          <div class="min-w-0">
             <p class="font-medium" id="empName"></p>
             <p class="text-white/50 text-sm" id="empDept"></p>
           </div>
         </div>
+        <p class="text-[11px] text-white/40 mt-2">ข้อมูลส่วนบุคคลถูกปกปิดเพื่อความปลอดภัย</p>
 
         <div id="pickupLocationWrap" class="hidden mt-4">
           <label class="text-sm text-white/50 mb-2 block">สถานที่รับสินค้า</label>
@@ -754,7 +776,9 @@ const CATALOG = [
   { name: 'กางเกงสีเทา',                category: 'pants', sizes: ['S','M','L','XL','2XL','3XL','4XL'], image: 'https://lh3.googleusercontent.com/d/1AVfWhMNjMBYs2gjifNyVDWPpKfoq-ojZ' },
   { name: 'กางเกงสีดำ',                 category: 'pants', sizes: ['S','M','L','XL','2XL','3XL','4XL'], image: 'https://lh3.googleusercontent.com/d/1a7weU8c9moocXZXR9nzFzg0uoSgGZ5Fn' },
   { name: 'รองเท้าผ้าใบ',               category: 'shoes', sizes: ['34','35','36','37','38','39','40','41','42','43','44','45','46','47'], image: 'https://lh3.googleusercontent.com/d/1WJ1ADv0lXNNa7Y2m2yxX4Ki0qI5-TZmI' },
-  { name: 'รองเท้าเซฟตี้',              category: 'shoes', sizes: ['23','23.5','24','24.5','25','25.5','26','26.5','27','27.5','28','29'], image: 'https://lh3.googleusercontent.com/d/1XjSDbDcs9gV_QXghim8W4XACobzWkMdK' }
+  { name: 'รองเท้าเซฟตี้',              category: 'shoes', sizes: ['23','23.5','24','24.5','25','25.5','26','26.5','27','27.5','28','29'], image: 'https://lh3.googleusercontent.com/d/1XjSDbDcs9gV_QXghim8W4XACobzWkMdK' },
+  // รองเท้าบูท EVA ข้อยาว: ชื่อสินค้าต้องตรงกับคอลัมน์ A ในชีท "ราคาสินค้า" / ไซส์ดึงจากคอลัมน์ B ของชีทอัตโนมัติ (sizesFromSheet)
+  { name: 'รองเท้าบูท EVA ข้อยาว',       category: 'shoes', sizes: [], sizesFromSheet: true, image: 'https://lh3.googleusercontent.com/d/1vxBCTHNFoGg6QgBHv9pVwDwiWU8-nlRK' }
 ];
 
 let PRICES = [];
@@ -774,6 +798,21 @@ let selectedPhone = null;
 document.getElementById('year').textContent = new Date().getFullYear();
 
 function fmtMoney(n) { return '฿' + Number(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 0 }); }
+
+// ============ ปิดข้อมูลส่วนบุคคล (ฝั่งพนักงาน) ============
+const MASK_TEXT = 'XXXXXXXX';
+function maskX(text) { return 'X'.repeat(String(text || '').length); }
+
+// ช่อง input จริงยังเก็บค่าจริงไว้ (ให้ค้นหาได้ถูกต้อง) แต่ตัวอักษรถูกซ่อน แล้วแสดงเป็น X ทีละตัวผ่าน overlay
+// ใช้วิธี overlay แทนการแก้ค่าใน input เอง เพื่อไม่ให้ชนกับคีย์บอร์ดมือถือ (IME/คำทำนาย)
+function initMaskedInput(input) {
+  const overlay = document.getElementById(input.id + 'Mask');
+  if (!overlay) return;
+  const render = function () { overlay.textContent = maskX(input.value); };
+  ['input', 'change', 'blur', 'focus'].forEach(function (ev) { input.addEventListener(ev, render); });
+  ['copy', 'cut', 'dragstart'].forEach(function (ev) { input.addEventListener(ev, function (e) { e.preventDefault(); }); }); // กันคัดลอกรหัสออกมา
+  render();
+}
 
 // แปลงวันที่แบบ ISO (yyyy-MM-dd, ค.ศ.) ที่ได้จากช่อง input type="date" ให้เป็น วัน/เดือน/ปี (พ.ศ.) สำหรับแสดงผล
 function toThaiDateLabel(isoStr) {
@@ -1129,6 +1168,7 @@ function loadPickupLocations() {
 }
 loadPickupLocations();
 
+initMaskedInput(document.getElementById('empCode'));
 document.getElementById('btnFetchEmp').addEventListener('click', fetchEmployee);
 document.getElementById('empCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') fetchEmployee(); });
 
@@ -1145,11 +1185,11 @@ function fetchEmployee() {
       return;
     }
     currentEmployee = res; selectedPickupLocation = null; selectedPhone = null;
-    document.getElementById('empAvatar').textContent = (res.name || '?').charAt(0);
-    document.getElementById('empName').textContent = res.name;
-    document.getElementById('empDept').textContent = (res.deptLabel || res.dept) + (res.position ? ' - ' + res.position : '');
+    // ปิดข้อมูลส่วนบุคคล: ไม่แสดงชื่อ-นามสกุล / ฝ่าย / ส่วน / แผนก / ตำแหน่ง (เซิร์ฟเวอร์ก็ไม่ส่งค่าจริงมาให้เช่นกัน)
+    document.getElementById('empName').textContent = 'ชื่อ-นามสกุล : ' + MASK_TEXT;
+    document.getElementById('empDept').textContent = 'ฝ่าย / ส่วน / แผนก / ตำแหน่ง : ' + MASK_TEXT;
     document.getElementById('empInfo').classList.remove('hidden');
-    Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'ยินดีต้อนรับคุณ ' + res.name, showConfirmButton: false, timer: 1200, background: '#1e1a18', color: '#fff' });
+    Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'ตรวจสอบรหัสพนักงานสำเร็จ', showConfirmButton: false, timer: 1200, background: '#1e1a18', color: '#fff' });
 
     if (selectedMode === 'status') {
       document.getElementById('pickupLocationWrap').classList.add('hidden');
@@ -1188,6 +1228,7 @@ function clearSession() {
   selectedPickupLocation = null;
   selectedPhone = null;
   document.getElementById('empCode').value = '';
+  document.getElementById('empCode').dispatchEvent(new Event('input'));
   document.getElementById('empInfo').classList.add('hidden');
   document.getElementById('pickupLocationWrap').classList.add('hidden');
   document.getElementById('pickupLocation').value = '';
@@ -1435,16 +1476,32 @@ function renderProductGrid() {
 
 // เช็คว่าสินค้าตัวนี้หมดสต็อกทุกไซส์หรือไม่ (อิงจากคอลัมน์ "สต็อก" ในชีท "ราคาสินค้า")
 // ถ้าหมดทุกไซส์ -> การ์ดสินค้าจะถูกทำให้เป็นสีทึบและกดเข้าไม่ได้ แต่ยังคงแสดงชื่อสินค้าไว้ในรายการเหมือนเดิม
+// ไซส์ของสินค้า: ถ้าตั้ง sizesFromSheet ให้ดึงจากชีท "ราคาสินค้า" (คอลัมน์ B) ตามลำดับที่อยู่ในชีท ไม่เช่นนั้นใช้ sizes ที่กำหนดใน CATALOG
+function getProductSizes(product) {
+  if (!product.sizesFromSheet) return product.sizes || [];
+  const norm = s => (s || '').toString().trim().toLowerCase();
+  const seen = {};
+  const out = [];
+  PRICES.forEach(p => {
+    if (norm(p.item) !== norm(product.name)) return;
+    const sz = (p.size || '').toString().trim();
+    if (!sz || seen[sz]) return;
+    seen[sz] = true; out.push(sz);
+  });
+  return out.length ? out : (product.sizes || []);
+}
+
 function isProductFullyOutOfStock(product) {
-  if (!product.sizes || product.sizes.length === 0) return false;
-  return product.sizes.every(function (s) {
+  const sizeList = getProductSizes(product);
+  if (!sizeList || sizeList.length === 0) return false;
+  return sizeList.every(function (s) {
     const p = findProduct(product.name, s);
     return p ? p.isOutOfStock : true;
   });
 }
 
 function openProductModal(product) {
-  const sizeOptions = product.sizes.map(s => {
+  const sizeOptions = getProductSizes(product).map(s => {
     const p = findProduct(product.name, s);
     const isOut = p ? p.isOutOfStock : false;
     return `<option value="${s}" ${isOut ? 'disabled' : ''}>${s}${isOut ? ' (สินค้าหมด)' : ''}</option>`;
@@ -1582,7 +1639,7 @@ document.getElementById('btnSubmitOrder').addEventListener('click', function () 
   const confirmModalHtml = `
     <div class="text-left text-sm space-y-3 mt-2">
       <div class="bg-panel2 p-3 rounded-xl border border-white/10 space-y-1">
-        <p class="text-xs text-white/70"><span class="text-white/40">ผู้สั่งซื้อ:</span> ${currentEmployee ? currentEmployee.name : '-'} (${currentEmployee ? currentEmployee.code : '-'})</p>
+        <p class="text-xs text-white/70"><span class="text-white/40">ผู้สั่งซื้อ:</span> ${MASK_TEXT} (รหัสพนักงาน ${currentEmployee ? maskX(currentEmployee.code) : '-'})</p>
         <p class="text-xs text-white/70"><span class="text-white/40">สถานที่รับสินค้า:</span> ${selectedPickupLocation || '-'}</p>
         <p class="text-xs text-white/70"><span class="text-white/40">เบอร์ติดต่อ:</span> ${selectedPhone || '-'}</p>
       </div>
@@ -2199,7 +2256,7 @@ function searchUniformEmployee() {
     loadUniformHistory(emp.code);
   }).withFailureHandler(function (err) {
     Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, background: '#1e1a18', color: '#fff' });
-  }).getEmployeeByCode(code);
+  }).getEmployeeByCode(code, dashboardPassword);
 }
 
 function resetUniformForm() {
@@ -2534,7 +2591,7 @@ function searchSpecialEmployee() {
     loadSpecialCatalogIfNeeded();
   }).withFailureHandler(function (err) {
     Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, background: '#1e1a18', color: '#fff' });
-  }).getEmployeeByCode(code);
+  }).getEmployeeByCode(code, dashboardPassword);
 }
 
 function resetSpecialForm() {
