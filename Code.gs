@@ -306,27 +306,39 @@ function _debugCheckUniformSheet() {
 const EMP_MASK_TEXT = 'XXXXXXXX';
 
 /**
- * คืนข้อมูลพนักงานแบบ "ปิดข้อมูล" - ค่าจริงของชื่อ/ฝ่าย/ส่วน/แผนก/ตำแหน่ง/วันบรรจุ จะไม่ถูกส่งออกจากเซิร์ฟเวอร์เลย
- * (ปิดที่ฝั่งเซิร์ฟเวอร์ ไม่ใช่แค่ซ่อนบนหน้าจอ จึงเปิดดูผ่าน DevTools / Network tab ก็ไม่เห็น)
+ * ตัดเอาเฉพาะ "ชื่อ" (ไม่เอานามสกุล) จากช่องชื่อ-นามสกุล เช่น "สมชาย ใจดี" -> "สมชาย"
+ * ถ้าคำแรกเป็นคำนำหน้า (นาย/นาง/นางสาว ฯลฯ) ที่เว้นวรรคแยก จะเอาคำถัดไปมาต่อให้
+ */
+function _firstNameOnly(fullName) {
+  const parts = _norm(fullName).split(/\s+/).filter(function (v) { return v !== ''; });
+  if (parts.length === 0) return '';
+  const titles = ['นาย', 'นาง', 'นางสาว', 'น.ส.', 'ด.ช.', 'ด.ญ.', 'mr.', 'mrs.', 'miss', 'ms.'];
+  if (parts.length > 1 && titles.indexOf(parts[0].toLowerCase()) !== -1) return parts[0] + parts[1];
+  return parts[0];
+}
+
+/**
+ * คืนข้อมูลพนักงานสำหรับผู้ใช้ทั่วไป: แสดงเฉพาะ "ชื่อ" และ "ฝ่าย" เท่านั้น
+ * นามสกุล / ส่วน / แผนก / ตำแหน่ง / วันบรรจุ จะไม่ถูกส่งออกจากเซิร์ฟเวอร์เลย (ปิดที่ฝั่งเซิร์ฟเวอร์ ไม่ใช่แค่ซ่อนบนหน้าจอ)
  */
 function _maskEmployee(emp) {
   return {
     found: true,
     masked: true,
     code: emp.code,
-    name: EMP_MASK_TEXT,
-    division: EMP_MASK_TEXT,
-    section: EMP_MASK_TEXT,
-    dept: EMP_MASK_TEXT,
-    deptLabel: EMP_MASK_TEXT,
-    position: EMP_MASK_TEXT,
+    name: _firstNameOnly(emp.name),
+    division: emp.division,
+    section: '',
+    dept: '',
+    deptLabel: emp.division,
+    position: '',
     confirmDate: ''
   };
 }
 
 /**
  * [สาธารณะ - อยู่ใน API_FUNCTIONS] ตรวจสอบรหัสพนักงาน
- *  - ไม่ส่งรหัสผ่านแอดมิน (หน้าสั่งซื้อ/เช็คสถานะของพนักงาน) -> ได้ข้อมูลแบบปิด (XXXXXXXX) เท่านั้น
+ *  - ไม่ส่งรหัสผ่านแอดมิน (หน้าสั่งซื้อ/เช็คสถานะของพนักงาน) -> ได้เฉพาะ ชื่อ + ฝ่าย
  *  - ส่งรหัสผ่านแอดมินที่ถูกต้อง (หน้าเบิกชุดบรรจุ/เบิกพิเศษ ฝั่งแอดมิน) -> ได้ข้อมูลเต็ม
  */
 function getEmployeeByCode(code, password) {
