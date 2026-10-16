@@ -1190,6 +1190,7 @@ function fetchEmployee() {
       return;
     }
     currentEmployee = res; selectedPickupLocation = null; selectedPhone = null;
+    console.log('[lookup] server ver =', res.ver || '(เวอร์ชันเก่า ไม่มี ver)', res);
     // แสดงเฉพาะ "ชื่อ" และ "ฝ่าย" (นามสกุล/ส่วน/แผนก/ตำแหน่ง เซิร์ฟเวอร์ไม่ส่งค่าจริงมาให้)
     document.getElementById('empAvatar').textContent = (res.name || '?').charAt(0);
     document.getElementById('empName').textContent = res.name || '-';
