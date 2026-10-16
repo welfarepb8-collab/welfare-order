@@ -326,7 +326,7 @@ function _maskEmployee(emp) {
     found: true,
     masked: true,
     code: emp.code,
-    name: _firstNameOnly(emp.name),
+    name: _firstNameOnly(emp.name) + ' XXX',
     division: emp.division,
     section: '',
     dept: '',
