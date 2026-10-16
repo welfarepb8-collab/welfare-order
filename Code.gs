@@ -325,6 +325,7 @@ function _maskEmployee(emp) {
   return {
     found: true,
     masked: true,
+    ver: 'mask-v3-2026-10-16',
     code: emp.code,
     name: _firstNameOnly(emp.name) + ' XXX',
     division: emp.division,
