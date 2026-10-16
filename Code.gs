@@ -300,7 +300,47 @@ function _debugCheckUniformSheet() {
 }
 
 /* ================================ EMPLOYEE LOOKUP ================================ */
-function getEmployeeByCode(code) {
+/**
+ * ข้อความที่ใช้ปิดข้อมูลส่วนบุคคล (ชื่อ-นามสกุล / ฝ่าย / ส่วน / แผนก / ตำแหน่ง) สำหรับผู้ใช้ทั่วไป
+ */
+const EMP_MASK_TEXT = 'XXXXXXXX';
+
+/**
+ * คืนข้อมูลพนักงานแบบ "ปิดข้อมูล" - ค่าจริงของชื่อ/ฝ่าย/ส่วน/แผนก/ตำแหน่ง/วันบรรจุ จะไม่ถูกส่งออกจากเซิร์ฟเวอร์เลย
+ * (ปิดที่ฝั่งเซิร์ฟเวอร์ ไม่ใช่แค่ซ่อนบนหน้าจอ จึงเปิดดูผ่าน DevTools / Network tab ก็ไม่เห็น)
+ */
+function _maskEmployee(emp) {
+  return {
+    found: true,
+    masked: true,
+    code: emp.code,
+    name: EMP_MASK_TEXT,
+    division: EMP_MASK_TEXT,
+    section: EMP_MASK_TEXT,
+    dept: EMP_MASK_TEXT,
+    deptLabel: EMP_MASK_TEXT,
+    position: EMP_MASK_TEXT,
+    confirmDate: ''
+  };
+}
+
+/**
+ * [สาธารณะ - อยู่ใน API_FUNCTIONS] ตรวจสอบรหัสพนักงาน
+ *  - ไม่ส่งรหัสผ่านแอดมิน (หน้าสั่งซื้อ/เช็คสถานะของพนักงาน) -> ได้ข้อมูลแบบปิด (XXXXXXXX) เท่านั้น
+ *  - ส่งรหัสผ่านแอดมินที่ถูกต้อง (หน้าเบิกชุดบรรจุ/เบิกพิเศษ ฝั่งแอดมิน) -> ได้ข้อมูลเต็ม
+ */
+function getEmployeeByCode(code, password) {
+  const emp = _getEmployeeFull(code);
+  if (!emp.found) return emp;
+  if (_isDashboardAllowed(password)) return emp;
+  return _maskEmployee(emp);
+}
+
+/**
+ * [ใช้ภายในเซิร์ฟเวอร์เท่านั้น] ดึงข้อมูลพนักงานแบบเต็มจากชีท "รายชื่อ"
+ * ห้ามเพิ่มฟังก์ชันนี้ใน API_FUNCTIONS เด็ดขาด (ใช้ตอนบันทึกลงชีท/พิมพ์ใบผ่าน ที่ต้องใช้ชื่อจริง)
+ */
+function _getEmployeeFull(code) {
   code = _norm(code);
   if (!code) return { found: false, message: 'กรุณากรอกรหัสพนักงาน' };
 
@@ -670,7 +710,7 @@ function submitUniformClaim(password, empCode, shirtItem, shirtSize, pantsItem, 
   empCode = _norm(empCode);
   if (!empCode) return { success: false, message: 'ไม่พบรหัสพนักงาน' };
 
-  const emp = getEmployeeByCode(empCode);
+  const emp = _getEmployeeFull(empCode);
   if (!emp.found) return { success: false, message: 'ไม่พบรหัสพนักงานนี้ในระบบ' };
 
   shirtItem = _norm(shirtItem);
@@ -1013,12 +1053,12 @@ function getUniformStatusByCode(code) {
   code = _norm(code);
   if (!code) return { success: false, message: 'กรุณากรอกรหัสพนักงาน' };
 
-  const emp = getEmployeeByCode(code);
+  const emp = _getEmployeeFull(code);
   if (!emp.found) return { success: false, message: 'ไม่พบรหัสพนักงานนี้ในระบบ กรุณาตรวจสอบอีกครั้ง' };
 
   const sh = _uniformClaimSheet();
   const lastRow = sh.getLastRow();
-  if (lastRow <= 1) return { success: true, empName: emp.name, receivedStatus: UNIFORM_STATUS_RECEIVED, claims: [] };
+  if (lastRow <= 1) return { success: true, receivedStatus: UNIFORM_STATUS_RECEIVED, claims: [] };
 
   const data = sh.getRange(2, 1, lastRow - 1, UNIFORM_CLAIM_HEADERS.length).getValues();
 
@@ -1053,7 +1093,7 @@ function getUniformStatusByCode(code) {
     };
   }).reverse();
 
-  return { success: true, empName: emp.name, receivedStatus: UNIFORM_STATUS_RECEIVED, claims: claims };
+  return { success: true, receivedStatus: UNIFORM_STATUS_RECEIVED, claims: claims };
 }
 
 /**
@@ -1078,7 +1118,7 @@ function _buildUniformPassPayload(empCode, updatedAt) {
     if (rowCode.toLowerCase() !== empCode.toLowerCase() || rowUpdatedAt !== updatedAt) return;
 
     if (!payload) {
-      const emp = getEmployeeByCode(rowCode);
+      const emp = _getEmployeeFull(rowCode);
       payload = {
         empCode: rowCode,
         empName: _norm(row[UNIFORM_CLAIM_COL.NAME - 1]),
@@ -1252,13 +1292,13 @@ function getSpecialStatusByCode(code) {
   code = _norm(code);
   if (!code) return { success: false, message: 'กรุณากรอกรหัสพนักงาน' };
 
-  const emp = getEmployeeByCode(code);
+  const emp = _getEmployeeFull(code);
   if (!emp.found) return { success: false, message: 'ไม่พบรหัสพนักงานนี้ในระบบ กรุณาตรวจสอบอีกครั้ง' };
 
   const sh = _specialClaimSheet();
   const lastRow = sh.getLastRow();
   if (lastRow <= 1) {
-    return { success: true, empName: emp.name, statuses: SPECIAL_CLAIM_STATUSES, cancelledStatus: SPECIAL_CLAIM_CANCELLED_STATUS, claims: [] };
+    return { success: true, statuses: SPECIAL_CLAIM_STATUSES, cancelledStatus: SPECIAL_CLAIM_CANCELLED_STATUS, claims: [] };
   }
 
   const data = sh.getRange(2, 1, lastRow - 1, SPECIAL_CLAIM_HEADERS.length).getValues();
@@ -1293,7 +1333,7 @@ function getSpecialStatusByCode(code) {
     };
   }).reverse();
 
-  return { success: true, empName: emp.name, statuses: SPECIAL_CLAIM_STATUSES, cancelledStatus: SPECIAL_CLAIM_CANCELLED_STATUS, claims: claims };
+  return { success: true, statuses: SPECIAL_CLAIM_STATUSES, cancelledStatus: SPECIAL_CLAIM_CANCELLED_STATUS, claims: claims };
 }
 
 /**
@@ -1307,7 +1347,7 @@ function submitSpecialClaim(password, empCode, itemsJson, extraText) {
   empCode = _norm(empCode);
   if (!empCode) return { success: false, message: 'ไม่พบรหัสพนักงาน' };
 
-  const emp = getEmployeeByCode(empCode);
+  const emp = _getEmployeeFull(empCode);
   if (!emp.found) return { success: false, message: 'ไม่พบรหัสพนักงานนี้ในระบบ' };
 
   let items;
@@ -1730,7 +1770,7 @@ function submitOrder(payload) {
     }
     const phone = _norm(payload.phone);
 
-    const emp = getEmployeeByCode(payload.code);
+    const emp = _getEmployeeFull(payload.code);
     if (!emp.found) {
       return { success: false, message: 'ไม่พบรหัสพนักงานนี้ในระบบ' };
     }
@@ -1807,12 +1847,12 @@ function getOrderStatusByCode(code) {
   code = _norm(code);
   if (!code) return { success: false, message: 'กรุณากรอกรหัสพนักงาน' };
 
-  const emp = getEmployeeByCode(code);
+  const emp = _getEmployeeFull(code);
   if (!emp.found) return { success: false, message: 'ไม่พบรหัสพนักงานนี้ในระบบ กรุณาตรวจสอบอีกครั้ง' };
 
   const sh = _sheet(SHEET_NAMES.ORDERS);
   const lastRow = sh.getLastRow();
-  if (lastRow <= 1) return { success: true, empName: emp.name, statuses: ORDER_STATUSES, orders: [] };
+  if (lastRow <= 1) return { success: true, statuses: ORDER_STATUSES, orders: [] };
 
   const numCols = Math.max(ORDER_HEADERS.length, sh.getLastColumn());
   const data = sh.getRange(2, 1, lastRow - 1, numCols).getValues();
@@ -1853,7 +1893,7 @@ function getOrderStatusByCode(code) {
   const orders = Object.keys(byOrderId).map(function (k) { return byOrderId[k]; });
   orders.sort(function (a, b) { return b.rawTimestamp - a.rawTimestamp; });
 
-  return { success: true, empName: emp.name, statuses: ORDER_STATUSES, cancelledStatus: CANCELLED_STATUS, orders: orders };
+  return { success: true, statuses: ORDER_STATUSES, cancelledStatus: CANCELLED_STATUS, orders: orders };
 }
 
 /* ================================ PASS / ใบผ่าน (ให้พนักงานนำสินค้าออกจากโรงงาน) ================================ */
