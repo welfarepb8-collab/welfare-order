@@ -1193,7 +1193,7 @@ function fetchEmployee() {
     // แสดงเฉพาะ "ชื่อ" และ "ฝ่าย" (นามสกุล/ส่วน/แผนก/ตำแหน่ง เซิร์ฟเวอร์ไม่ส่งค่าจริงมาให้)
     document.getElementById('empAvatar').textContent = (res.name || '?').charAt(0);
     document.getElementById('empName').textContent = res.name || '-';
-    document.getElementById('empDept').textContent = 'ฝ่าย : ' + (res.division || '-');
+    document.getElementById('empDept').textContent = res.division ? ('ฝ่าย' + String(res.division).replace(/^ฝ่าย\s*/, '')) : '-';
     document.getElementById('empInfo').classList.remove('hidden');
     Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'ยินดีต้อนรับคุณ ' + (res.name || ''), showConfirmButton: false, timer: 1200, background: '#1e1a18', color: '#fff' });
 
