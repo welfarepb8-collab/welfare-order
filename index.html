@@ -97,6 +97,26 @@
       .pv-formtable th, .pv-formtable td.pv-td { padding: 1.3mm 1.3mm; }
     }
 
+    /* ===== รองรับมือถือ / แท็บเล็ต / คอมพิวเตอร์ (รวมถึงตอนฝังใน Google Sites) ===== */
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    img, video, canvas, svg { max-width: 100%; }
+    table { max-width: 100%; }
+    /* มือถือ/แท็บเล็ต: ช่องกรอกใช้ตัวอักษร 16px ป้องกัน iOS ซูมหน้าจออัตโนมัติ + ปุ่มกดง่ายขึ้น */
+    @media screen and (max-width: 1024px) {
+      input:not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
+    }
+    @media screen and (pointer: coarse) {
+      input:not([type=checkbox]):not([type=radio]), select { min-height: 44px; }
+    }
+    /* มือถือเล็ก: ลดขอบด้านข้างของหน้าให้เนื้อหากว้างขึ้น */
+    @media screen and (max-width: 480px) {
+      .max-w-5xl.px-5, main.px-5 { padding-left: 0.875rem; padding-right: 0.875rem; }
+    }
+    /* แท็บเล็ต: ให้การ์ดหลักไม่แคบเกินไป */
+    @media screen and (min-width: 641px) and (max-width: 1024px) {
+      .max-w-5xl, .max-w-6xl { max-width: 100%; }
+    }
+
     @media print {
       body * { visibility: hidden !important; }
       #uniformPassModal, #uniformPassModal * { visibility: visible !important; }
